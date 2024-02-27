@@ -27,26 +27,51 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        base_model = None,
+        base_model=None,
         norm_mean=cnn_normalization_mean,
         norm_std=cnn_normalization_std,
-        depth: int = 19,
+        blocks: list[int] = [0, 4, 11, 18, 31],
         device="cpu",
     ):
         super(Encoder, self).__init__()
-        self.depth = depth
+        self.blocks = blocks
         self.device = device
         self.normalization = Normalization(norm_mean, norm_std, device)
 
         # Load the VGG19 model with the pretrained weights when the base_model is not defined
         if base_model is None:
-            self.model = vgg19(weights=VGG19_Weights.DEFAULT).features[:depth]
-        self.model = base_model.features[:depth]
+            self.model = vgg19(weights=VGG19_Weights.DEFAULT).features
+        self.model = base_model.features
 
         # Freeze the model
         for param in self.model.parameters():
             param.requires_grad = False
 
-    def forward(self, x):
+        self.block_layers = []
+        for i in range(len(self.blocks) - 1):
+            self.block_layers.append(self.model[self.blocks[i] : self.blocks[i + 1]])
+
+    def forward(self, x, all_features: bool = False):
+        """Forward pass through the encoder model.
+
+        The forward pass has two different modes:
+        - Return all features of the model for the selected blocks
+        - Return the last features of the model defined by the depth
+
+        Args:
+            x (torch.Tensor): Input tensor
+            all_features (bool): Return all the features of the model. Defaults to False.
+
+        Returns:
+            torch.Tensor: Encoded tensor
+        """
         x = self.normalization(x)
-        return self.model(x)
+
+        features = []
+        for layer in self.block_layers:
+            x = layer(x)
+            features.append(x)
+
+        if all_features:
+            return features
+        return x
