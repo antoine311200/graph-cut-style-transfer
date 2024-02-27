@@ -42,6 +42,7 @@ class Encoder(nn.Module):
         if base_model is None:
             self.model = vgg19(weights=VGG19_Weights.DEFAULT).features
         self.model = base_model.features
+        self.model.to(device)
 
         # Freeze the model
         for param in self.model.parameters():
