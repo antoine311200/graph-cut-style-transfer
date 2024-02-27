@@ -132,8 +132,8 @@ def feature_WCT(content_features, style_features, label, alpha):
         cluster_size - 1
     )
 
-    content_U, content_S, content_V = np.linalg.svd(content_covariance)
-    style_U, style_S, style_V = np.linalg.svd(style_covariance)
+    _, content_S, content_V = np.linalg.svd(content_covariance)
+    _, style_S, style_V = np.linalg.svd(style_covariance)
     content_D = np.diag(np.power(content_S, -0.5))
     style_D = np.diag(np.power(style_S, 0.5))
 
@@ -150,3 +150,24 @@ def feature_WCT(content_features, style_features, label, alpha):
     result = result * (1 - alpha) + content_features * alpha
 
     return result
+
+def style_transfer(content_features, style_features, alpha=0.6, k=3, gamma=0.1):
+    """Perform the style transfer using the graph cut algorithm.
+
+    Args:
+        content_features (np.array): Content features of the content image
+        style_features (np.array): Style features of the style image
+        alpha (float, optional): Weight of the content features. Defaults to 0.6.
+        k (int, optional): Number of clusters. Defaults to 3.
+        gamma (float, optional): Weight of the smooth energy. Defaults to 0.1.
+
+    Returns:
+        np.array: Transfered features
+    """
+    labels, cluster_list = total_energy(content_features, style_features, k=k, gamma=gamma)
+
+    transfered_features = np.zeros(content_features.shape)
+    for i, label in enumerate(labels.T):
+        transfered_features += feature_WCT(content_features, cluster_list[i], label, alpha)
+
+    return transfered_features
