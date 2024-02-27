@@ -9,7 +9,7 @@ from ..loss import ContentLoss, StyleLoss
 class TransferModel(nn.Module):
     def __init__(
         self,
-        base_model,
+        base_model = None,
         blocks: list[int] = [0, 4, 11, 18, 31],
         n_clusters: int = 3,
         alpha: float = 0.6,
