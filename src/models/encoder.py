@@ -43,6 +43,10 @@ class Encoder(nn.Module):
             self.model = vgg19(weights=VGG19_Weights.DEFAULT).features[:depth]
         self.model = base_model.features[:depth]
 
+        # Freeze the model
+        for param in self.model.parameters():
+            param.requires_grad = False
+
     def forward(self, x):
         x = self.normalization(x)
         return self.model(x)
