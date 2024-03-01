@@ -11,7 +11,12 @@ from src.dataset import ContentStyleDataset
 
 
 def train_step(
-    model, dataloader, optimizer, snapshot_dataloader, snapshot_interval=1000
+    model,
+    dataloader,
+    optimizer,
+    snapshot_dataloader,
+    snapshot_interval=1000,
+    save_interval=1000,
 ):
     snapshot_dataloader = iter(snapshot_dataloader)
     batch_size = dataloader.batch_size
@@ -42,10 +47,12 @@ def train_step(
                 )
 
             save_image(snapshot_batch, f"snapshot_{i}.png", nrow=batch_size)
+
+        if i % save_interval == 0:
             torch.save(model.state_dict(), f"model_{i}.pt")
 
 
-def train(n_clusters=3, alpha=1., lambd=0.1, gamma=1., epochs=1, lr=1e-5):
+def train(n_clusters=3, alpha=1.0, lambd=0.1, gamma=1.0, epochs=1, lr=1e-5):
 
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
@@ -73,7 +80,12 @@ def train(n_clusters=3, alpha=1., lambd=0.1, gamma=1., epochs=1, lr=1e-5):
 
     for epoch in range(epochs):
         train_step(
-            model, dataloader, optimizer, snapshot_dataloader, snapshot_interval=10
+            model,
+            dataloader,
+            optimizer,
+            snapshot_dataloader,
+            snapshot_interval=10,
+            save_interval=100,
         )
         print(f"Epoch {epoch+1}/{epochs} done.")
 
