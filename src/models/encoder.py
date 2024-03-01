@@ -41,8 +41,11 @@ class Encoder(nn.Module):
         # Load the VGG19 model with the pretrained weights when the base_model is not defined
         if base_model is None:
             self.model = vgg19(weights=VGG19_Weights.DEFAULT).features
+        print(base_model)
         self.model = base_model.features
         self.model.to(device)
+
+        print(self.model)
 
         # Freeze the model
         for param in self.model.parameters():
@@ -51,6 +54,8 @@ class Encoder(nn.Module):
         self.block_layers = []
         for i in range(len(self.blocks) - 1):
             self.block_layers.append(self.model[self.blocks[i] : self.blocks[i + 1]])
+
+        print(self.block_layers)
 
     def forward(self, x, all_features: bool = False):
         """Forward pass through the encoder model.

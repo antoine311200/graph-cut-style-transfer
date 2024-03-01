@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from sklearn.cluster import KMeans
@@ -166,8 +167,14 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, gamma=0.1):
     """
     labels, cluster_list = total_energy(content_features, style_features, k=k, gamma=gamma)
 
+    print(labels.shape, cluster_list[0].shape)
+
     transfered_features = np.zeros(content_features.shape)
-    for i, label in enumerate(labels.T):
+    for i in range(k):
+        label = (labels == i).astype(int)
+        if cluster_list[i].shape[0] == 1:
+            continue
         transfered_features += feature_WCT(content_features, cluster_list[i], label, alpha)
 
+    transfered_features = torch.from_numpy(transfered_features).float()
     return transfered_features
