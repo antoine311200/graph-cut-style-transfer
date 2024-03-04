@@ -52,15 +52,20 @@ def train_step(
             torch.save(model.state_dict(), f"model_{i}.pt")
 
 
-def train(n_clusters=3, alpha=1.0, lambd=0.1, gamma=1.0, epochs=1, lr=1e-5):
+def train(n_clusters=3, alpha=0.8, lambd=0.1, gamma=0.01, epochs=1, lr=1e-5):
 
     content_dir = "./data/coco"
-    style_dir = "./data/wikiart"
+    style_dir = r"E:\Antoine\data\wikiart\wikiart" #"./data/wikiart"
 
     batch_size = 8
 
-    dataset = ContentStyleDataset(content_dir, style_dir, mode="train")
-    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, mode="test")
+    max_images = 4000
+
+    dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="train")
+    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="test")
+
+    print(f"Dataset size: {len(dataset)}")
+    print(f"Snapshot dataset size: {len(snapshot_dataset)}")
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     snapshot_dataloader = DataLoader(
