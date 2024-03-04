@@ -158,6 +158,9 @@ def feature_WCT(content_features, style_features, label, alpha):
         result = alpha * result + (1 - alpha) * content_mask
 
     except np.linalg.LinAlgError:
+
+        print("SVD did not converge, returning content features")
+
         result = content_mask
 
     return result
@@ -177,7 +180,7 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
     """
     labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd)
 
-    print(labels.shape, cluster_list[0].shape)
+    print(labels.shape, [cluster.shape[0] for cluster in cluster_list])
 
     transfered_features = np.zeros(content_features.shape)
     for i in range(k):
