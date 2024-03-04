@@ -1,4 +1,5 @@
 from torch import nn
+import numpy as np
 
 class ContentLoss(nn.Module):
     """Content loss for the Multimodal Style Transfer model.
@@ -8,6 +9,8 @@ class ContentLoss(nn.Module):
 
     def forward(self, output_features, content_features):
         self.loss = nn.functional.mse_loss(output_features, content_features)
+        # Normalize the loss by the number of elements in the tensor
+        self.loss /= np.prod(output_features.shape[:2])
         return self.loss
 
 class StyleLoss(nn.Module):
@@ -32,5 +35,7 @@ class StyleLoss(nn.Module):
             style_std = style_features.std(dim=[2, 3], keepdim=True)
 
             layer_loss = nn.functional.mse_loss(content_mean, style_mean) + nn.functional.mse_loss(content_std, style_std)
+            # Normalize the loss by the number of elements in the tensor
+            layer_loss /= np.prod(output_features.shape[:2])
             self.loss += layer_loss
         return self.loss

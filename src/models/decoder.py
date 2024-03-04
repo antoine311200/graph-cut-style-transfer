@@ -28,9 +28,12 @@ class Decoder(nn.Module):
         for i, layer in enumerate(reversed(self.model)):
             if isinstance(layer, nn.MaxPool2d):
                 self.reverse_model.add_module(str(i), ScaleUp())
-                # Inverse input and output shape if Conv2d
             elif isinstance(layer, nn.Conv2d):
+                # Set the weights of the layer to the transposed weights of the original model layer
+                weights = nn.Parameter(layer.weight.permute(1, 0, 2, 3))
+                # Inverse input and output shape if Conv2d
                 layer = nn.Conv2d(layer.out_channels, layer.in_channels, layer.kernel_size, layer.stride, layer.padding)
+                layer.weight = weights
                 self.reverse_model.add_module(str(i), layer)
                 self.reverse_model.add_module(str(i) + "_activation", nn.ReLU())
 

@@ -39,7 +39,6 @@ class TransferModel(nn.Module):
         style_features = self.encoder(style_images)
 
         transfered_features = self.transfer(content_features, style_features)
-        print(transfered_features.shape)
         decoded_features = self.decoder(transfered_features)
 
         if output_image:
@@ -51,6 +50,8 @@ class TransferModel(nn.Module):
 
         content_loss = self.content_loss(encoded_features, content_features)
         style_loss = self.style_loss(all_encoded_features, all_style_features)
+
+        print(content_loss.item(), style_loss.item(), self.gamma)
         loss = content_loss + self.gamma*style_loss
 
         return loss

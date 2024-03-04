@@ -155,7 +155,7 @@ def feature_WCT(content_features, style_features, label, alpha):
         result = (
             coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)
         ).reshape(content_features.shape) + style_mean
-        result = alpha * result + (1 - alpha) * content_mask
+        result = alpha * result + (1 - alpha) * content_features
 
     except np.linalg.LinAlgError:
 
