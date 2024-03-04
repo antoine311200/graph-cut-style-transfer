@@ -11,7 +11,12 @@ from src.dataset import ContentStyleDataset
 
 
 def train_step(
-    model, dataloader, optimizer, snapshot_dataloader, snapshot_interval=1000
+    model,
+    dataloader,
+    optimizer,
+    snapshot_dataloader,
+    snapshot_interval=1000,
+    save_interval=1000,
 ):
     snapshot_dataloader = iter(snapshot_dataloader)
     batch_size = dataloader.batch_size
@@ -41,19 +46,28 @@ def train_step(
                     snapshot_content, snapshot_style, output_image=True
                 )
 
-            save_image(snapshot_batch, f"snapshot_{i}.png", nrow=batch_size)
+            # Create an image with nrow = batch_size, ncol = 3 with the content, style and output images
+            snapshot_images = torch.cat(
+                [snapshot_content, snapshot_style, snapshot_batch], dim=0
+            )
+            save_image(snapshot_images, f"snapshot_{i}.png", nrow=batch_size, ncol=3)
+
+        if i % save_interval == 0:
             torch.save(model.state_dict(), f"model_{i}.pt")
 
 
-def train(n_clusters=3, alpha=1., lambd=0.1, gamma=1., epochs=1, lr=1e-5):
+def train(batch_size=8, n_clusters=3, alpha=0.8, lambd=0.1, gamma=1.0, epochs=1, lr=1e-4):
 
     content_dir = "./data/coco"
-    style_dir = "./data/wikiart"
+    style_dir = r"E:\Antoine\data\wikiart\wikiart" #"./data/wikiart"
 
-    batch_size = 8
+    max_images = 4000
 
-    dataset = ContentStyleDataset(content_dir, style_dir, mode="train")
-    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, mode="test")
+    dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="train")
+    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="test")
+
+    print(f"Dataset size: {len(dataset)}")
+    print(f"Snapshot dataset size: {len(snapshot_dataset)}")
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     snapshot_dataloader = DataLoader(
@@ -73,10 +87,28 @@ def train(n_clusters=3, alpha=1., lambd=0.1, gamma=1., epochs=1, lr=1e-5):
 
     for epoch in range(epochs):
         train_step(
-            model, dataloader, optimizer, snapshot_dataloader, snapshot_interval=10
+            model,
+            dataloader,
+            optimizer,
+            snapshot_dataloader,
+            snapshot_interval=10,
+            save_interval=100,
         )
         print(f"Epoch {epoch+1}/{epochs} done.")
 
 
 if __name__ == "__main__":
-    train()
+
+    params = {
+        "batch_size": 8,
+        "n_clusters": 3,
+        "alpha": 1.0,
+        "lambd": 0.1,
+        "gamma": 1.0,
+        "epochs": 1,
+        "lr": 1e-5,
+    }
+
+    train(
+        **params
+    )
