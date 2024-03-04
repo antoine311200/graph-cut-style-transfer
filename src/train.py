@@ -46,7 +46,10 @@ def train_step(
                     snapshot_content, snapshot_style, output_image=True
                 )
 
-            save_image(snapshot_batch, f"snapshot_{i}.png", nrow=batch_size)
+            snapshot_images = torch.cat(
+                [snapshot_content, snapshot_style, snapshot_batch], dim=0
+            )
+            save_image(snapshot_images, f"snapshot_{i}.png", nrow=batch_size, ncols=3)
 
         if i % save_interval == 0:
             torch.save(model.state_dict(), f"model_{i}.pt")
@@ -55,7 +58,7 @@ def train_step(
 def train(n_clusters=3, alpha=1.0, lambd=0.1, gamma=1.0, epochs=1, lr=1e-5):
 
     content_dir = "./data/coco"
-    style_dir = "./data/wikiart"
+    style_dir = r"E:\Antoine\data\wikiart\wikiart"  # "./data/wikiart"
 
     batch_size = 8
 

@@ -30,7 +30,9 @@ class Decoder(nn.Module):
                 self.reverse_model.add_module(str(i), ScaleUp())
                 # Inverse input and output shape if Conv2d
             elif isinstance(layer, nn.Conv2d):
+                weights = nn.Parameter(layer.weight.permute(1, 0, 2, 3))
                 layer = nn.Conv2d(layer.out_channels, layer.in_channels, layer.kernel_size, layer.stride, layer.padding)
+                layer.weight = weights
                 self.reverse_model.add_module(str(i), layer)
                 self.reverse_model.add_module(str(i) + "_activation", nn.ReLU())
 
