@@ -16,6 +16,8 @@ class ContentStyleDataset(Dataset):
         self.style_dir = style_dir
         self.transform = transform
 
+        print(f"Loading {mode} dataset with {len(os.listdir(content_dir)[:int(max_length*ratio)])} content images and {len(os.listdir(style_dir)[:int(max_length*ratio)])} style images")
+
         if mode == "train":
             self.content_images = os.listdir(content_dir)[:int(max_length*ratio)]
             self.style_images = os.listdir(style_dir)[:int(max_length*ratio)]

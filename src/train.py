@@ -66,10 +66,13 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
     content_dir = "./data/coco"
     style_dir = r"E:\Antoine\data\wikiart\wikiart"  # "./data/wikiart"
 
-    batch_size = 8
+    max_images = 4000
 
-    dataset = ContentStyleDataset(content_dir, style_dir, mode="train")
-    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, mode="test")
+    dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="train")
+    snapshot_dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="test")
+
+    print(f"Dataset size: {len(dataset)}")
+    print(f"Snapshot dataset size: {len(snapshot_dataset)}")
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
@@ -113,4 +116,17 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
 
 
 if __name__ == "__main__":
-    train()
+
+    params = {
+        "batch_size": 8,
+        "n_clusters": 3,
+        "alpha": 1.0,
+        "lambd": 0.1,
+        "gamma": 1.0,
+        "epochs": 1,
+        "lr": 1e-5,
+    }
+
+    train(
+        **params
+    )
