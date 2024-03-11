@@ -14,7 +14,7 @@ class ScaleUp(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, base_model=None, stop_layer=31, device="cpu"):
+    def __init__(self, base_model=None, pretrained_weights=None, stop_layer=31, device="cpu"):
         super(Decoder, self).__init__()
         self.base_model = base_model
 
@@ -28,9 +28,11 @@ class Decoder(nn.Module):
         for i, layer in enumerate(reversed(self.model)):
             if isinstance(layer, nn.MaxPool2d):
                 self.reverse_model.add_module(str(i), ScaleUp())
-                # Inverse input and output shape if Conv2d
             elif isinstance(layer, nn.Conv2d):
+                # Inverse input and output shape if Conv2d
                 layer = nn.Conv2d(layer.out_channels, layer.in_channels, layer.kernel_size, layer.stride, layer.padding)
+                # Set the weights of the layer using Xaiver initialization
+                nn.init.xavier_uniform_(layer.weight)
                 self.reverse_model.add_module(str(i), layer)
                 self.reverse_model.add_module(str(i) + "_activation", nn.ReLU())
 
@@ -46,5 +48,3 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         return self.reverse_model(x)
-
-
