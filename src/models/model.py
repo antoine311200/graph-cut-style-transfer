@@ -13,16 +13,20 @@ class TransferModel(nn.Module):
     def __init__(
         self,
         base_model = None,
+        pretrained_weights = None,
         blocks: list[int] = [0, 2, 7, 12, 21],
         n_clusters: int = 3,
         alpha: float = 0.6,
         lambd: float = 0.1,
         gamma: float = 0.01,
         device="cpu",
+        mode="pretrain"
     ):
         super(TransferModel, self).__init__()
         self.encoder = Encoder(base_model, blocks=blocks, device=device)
         self.decoder = Decoder(base_model, stop_layer=blocks[-1], device=device)
+
+        self.load_state_dict(torch.load(pretrained_weights))
 
         self.n_clusters = n_clusters
         self.alpha = alpha
@@ -32,26 +36,37 @@ class TransferModel(nn.Module):
         self.content_loss = ContentLoss()
         self.style_loss = StyleLoss()
 
+        self.mode = mode
+
         self.device = device
 
     def forward(self, content_images, style_images, output_image=False):
         content_features = self.encoder(content_images)
         style_features = self.encoder(style_images)
 
-        transfered_features = self.transfer(content_features, style_features)
-        print(transfered_features.shape)
-        decoded_features = self.decoder(transfered_features)
+        if self.mode == "pretrain":
+            decoded_features = self.decoder(content_features) # Shape: (batch_size, channel, height, width)
+            if output_image:
+                return decoded_features
+            encoded_features = self.encoder(decoded_features)
+            content_loss = self.content_loss(encoded_features, content_features)
+            loss = content_loss
+        elif self.mode == "style_transfer":
+            transfered_features = self.transfer(content_features, style_features)
+            decoded_features = self.decoder(transfered_features)
 
-        if output_image:
-            return decoded_features
+            if output_image:
+                return decoded_features
 
-        encoded_features = self.encoder(decoded_features)
-        all_encoded_features = self.encoder(decoded_features, all_features=True)
-        all_style_features = self.encoder(style_images, all_features=True)
+            all_encoded_features = self.encoder(decoded_features, all_features=True)
+            all_style_features = self.encoder(style_images, all_features=True)
+            encoded_features = all_encoded_features[-1]
 
-        content_loss = self.content_loss(encoded_features, content_features)
-        style_loss = self.style_loss(all_encoded_features, all_style_features)
-        loss = content_loss + self.gamma*style_loss
+            content_loss = self.content_loss(encoded_features, content_features)
+            style_loss = self.style_loss(all_encoded_features, all_style_features)
+            loss = content_loss + self.gamma*style_loss
+        else:
+            raise ValueError("Invalid mode")
 
         return loss
 
