@@ -133,22 +133,27 @@ def feature_WCT(content_features, style_features, label, alpha):
         cluster_size - 1
     )
 
-    _, content_S, content_V = np.linalg.svd(content_covariance)
-    _, style_S, style_V = np.linalg.svd(style_covariance)
-    content_D = np.diag(np.power(content_S, -0.5))
-    style_D = np.diag(np.power(style_S, 0.5))
+    # It can happen that the SVD fails to converge, in this case we return the content features
+    try:
+        _, content_S, content_V = np.linalg.svd(content_covariance)
+        _, style_S, style_V = np.linalg.svd(style_covariance)
+        content_D = np.diag(np.power(content_S, -0.5))
+        style_D = np.diag(np.power(style_S, 0.5))
 
-    # Compute the whitening and coloring matrix
-    whitening_matrix = content_V @ content_D @ content_V.T
-    coloring_matrix = style_V @ style_D @ style_V.T
+        # Compute the whitening and coloring matrix
+        whitening_matrix = content_V @ content_D @ content_V.T
+        coloring_matrix = style_V @ style_D @ style_V.T
 
-    style_mean = style_mean[:, np.newaxis]
-    style_mean = style_mean * label
+        style_mean = style_mean[:, np.newaxis]
+        style_mean = style_mean * label
 
-    result = (
-        coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)
-    ).reshape(content_features.shape) + style_mean
-    result = result * alpha + content_mask * (1 - alpha)
+        result = (
+            coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)
+        ).reshape(content_features.shape) + style_mean
+        result = result * alpha + content_mask * (1 - alpha)
+    except np.linalg.LinAlgError:
+        print("SVD failed to converge")
+        result = content_features
 
     return result
 
