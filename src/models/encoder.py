@@ -36,12 +36,16 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.blocks = blocks
         self.device = device
-        self.normalization = Normalization(norm_mean, norm_std, device)
+        # self.normalization = Normalization(norm_mean, norm_std, device)
 
         # Load the VGG19 model with the pretrained weights when the base_model is not defined
         if base_model is None:
             base_model = vgg19(weights=VGG19_Weights.DEFAULT)
 
+        self.preprocess = nn.Sequential(
+            nn.Conv2d(3, 3, 1),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+        )
         self.model = nn.Sequential()
         num_layer = 0
         for i, layer in enumerate(base_model.features):
@@ -54,13 +58,14 @@ class Encoder(nn.Module):
                 self.model.add_module(str(num_layer), layer)
                 num_layer += 1
 
+        self.preprocess.to(device)
         self.model.to(device)
 
         print(self.model)
 
         # Freeze the model
-        for param in self.model.parameters():
-            param.requires_grad = False
+        # for param in self.model.parameters():
+        #     param.requires_grad = False
 
         self.block_layers = []
         for i in range(len(self.blocks) - 1):
@@ -82,7 +87,8 @@ class Encoder(nn.Module):
         Returns:
             torch.Tensor: Encoded tensor
         """
-        x = self.normalization(x)
+        # x = self.normalization(x)
+        x = self.preprocess(x)
 
         features = []
         for layer in self.block_layers:

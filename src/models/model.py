@@ -48,9 +48,9 @@ class TransferModel(nn.Module):
             decoded_features = self.decoder(content_features) # Shape: (batch_size, channel, height, width)
             if output_image:
                 return decoded_features
-            # encoded_features = self.encoder(decoded_features)
-            # content_loss = self.content_loss(encoded_features, content_features)
-            content_loss = self.content_loss(decoded_features, content_images)
+            encoded_features = self.encoder(decoded_features)
+            content_loss = self.content_loss(encoded_features, content_features)
+            # content_loss = self.content_loss(decoded_features, content_images)
             loss = content_loss
         elif self.mode == "style_transfer":
             transfered_features = self.transfer(content_features, style_features)
