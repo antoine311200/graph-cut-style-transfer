@@ -1,11 +1,11 @@
 import torch
 from torch import nn
 
+from multiprocessing import Pool
+
 from src.models.encoder import Encoder
 from src.models.decoder import Decoder
 
-# import sys
-# sys.path.append("..")
 from src.energy import style_transfer
 from src.loss import ContentLoss, StyleLoss
 
@@ -14,7 +14,7 @@ class TransferModel(nn.Module):
         self,
         base_model = None,
         pretrained_weights = None,
-        blocks: list[int] = [0, 2, 7, 12, 21],
+        blocks: list[int] = [0, 3, 10, 17, 30],#[0, 2, 7, 12, 31],
         n_clusters: int = 3,
         alpha: float = 0.6,
         lambd: float = 0.1,
@@ -24,9 +24,9 @@ class TransferModel(nn.Module):
     ):
         super(TransferModel, self).__init__()
         self.encoder = Encoder(base_model, blocks=blocks, device=device)
-        self.decoder = Decoder(base_model, stop_layer=blocks[-1], device=device)
+        self.decoder = Decoder(self.encoder.model, stop_layer=blocks[-1], device=device)
 
-        self.load_state_dict(torch.load(pretrained_weights))
+        if pretrained_weights: self.load_state_dict(torch.load(pretrained_weights))
 
         self.n_clusters = n_clusters
         self.alpha = alpha
@@ -48,8 +48,9 @@ class TransferModel(nn.Module):
             decoded_features = self.decoder(content_features) # Shape: (batch_size, channel, height, width)
             if output_image:
                 return decoded_features
-            encoded_features = self.encoder(decoded_features)
-            content_loss = self.content_loss(encoded_features, content_features)
+            # encoded_features = self.encoder(decoded_features)
+            # content_loss = self.content_loss(encoded_features, content_features)
+            content_loss = self.content_loss(decoded_features, content_images)
             loss = content_loss
         elif self.mode == "style_transfer":
             transfered_features = self.transfer(content_features, style_features)
@@ -70,7 +71,25 @@ class TransferModel(nn.Module):
 
         return loss
 
-    def transfer(self, content_features, style_features):
+    def transfer(self, content_features, style_features, num_workers=4):
+        # with Pool(processes=num_workers) as pool:
+        #     transfered_features = pool.starmap(
+        #         style_transfer,
+        #         [
+        #             (
+        #                 content_features[i].detach().cpu().numpy(),
+        #                 style_features[i].detach().cpu().numpy(),
+        #                 self.alpha,
+        #                 self.n_clusters,
+        #                 self.lambd,
+        #             )
+        #             for i in range(content_features.shape[0])
+        #         ],
+        #     )
+
+        # # List of Tensors to Tensor
+        # transfered_features = torch.stack(transfered_features)
+
         transfered_features = torch.zeros_like(
             content_features
         )  # (batch_size, channel, height, width)
