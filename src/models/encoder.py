@@ -40,9 +40,20 @@ class Encoder(nn.Module):
 
         # Load the VGG19 model with the pretrained weights when the base_model is not defined
         if base_model is None:
-            self.model = vgg19(weights=VGG19_Weights.DEFAULT).features
-        print(base_model)
-        self.model = base_model.features
+            base_model = vgg19(weights=VGG19_Weights.DEFAULT)
+
+        self.model = nn.Sequential()
+        num_layer = 0
+        for i, layer in enumerate(base_model.features):
+            if isinstance(layer, nn.Conv2d):
+                layer.padding = (0, 0)
+                self.model.add_module(str(num_layer), layer)
+                self.model.add_module(str(num_layer+1), nn.ReflectionPad2d((1, 1, 1, 1)))
+                num_layer += 2
+            else:
+                self.model.add_module(str(num_layer), layer)
+                num_layer += 1
+
         self.model.to(device)
 
         print(self.model)

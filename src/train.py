@@ -35,7 +35,7 @@ def train_step(
         loss.backward()
         optimizer.step()
 
-        if i % 25 == 0 and i != 0:
+        if i % 25 == 0 and i != 0 and scheduler is not None:
             scheduler.step()
 
         losses.append(loss.item())
@@ -61,7 +61,7 @@ def train_step(
             print(f"Model saved at iteration {i}.")
 
 
-def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
+def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8):
 
     content_dir = "./data/coco"
     style_dir = r"E:\Antoine\data\wikiart\wikiart"  # "./data/wikiart"
@@ -78,7 +78,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = "pretrained_weights.pt"
+    pretrained_weights = None#"pretrained_weights.pt"#None#"model_399.pt" #
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
@@ -89,10 +89,10 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
         gamma=gamma,
         lambd=lambd,
         device=device,
-        mode="style_transfer"
+        mode="pretrain"#"style_transfer"
     )
     optimizer = Adam(model.parameters(), lr=lr)
-    scheduler = CosineAnnealingLR(optimizer, num_iterations)
+    scheduler = None# CosineAnnealingLR(optimizer, num_iterations)
 
     print("Training the transfert model using the following parameters:")
     print(f"  - n_clusters: {n_clusters}")
@@ -110,7 +110,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4):
             scheduler,
             snapshot_dataloader,
             snapshot_interval=10,
-            save_interval=100,
+            save_interval=50,
         )
         print(f"Epoch {epoch+1}/{epochs} done.")
 
@@ -119,12 +119,12 @@ if __name__ == "__main__":
 
     params = {
         "batch_size": 8,
-        "n_clusters": 3,
-        "alpha": 1.0,
-        "lambd": 0.1,
-        "gamma": 1.0,
-        "epochs": 1,
-        "lr": 1e-5,
+        "n_clusters": 5,
+        "alpha": 0.3,
+        "lambd": 0.01,
+        "gamma": 0.1,
+        "epochs": 5,
+        "lr": 2e-5,
     }
 
     train(
