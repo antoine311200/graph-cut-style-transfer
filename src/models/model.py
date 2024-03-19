@@ -42,7 +42,6 @@ class TransferModel(nn.Module):
 
     def forward(self, content_images, style_images, output_image=False):
         content_features = self.encoder(content_images)
-        style_features = self.encoder(style_images)
 
         if self.mode == "pretrain":
             decoded_features = self.decoder(content_features) # Shape: (batch_size, channel, height, width)
@@ -53,6 +52,7 @@ class TransferModel(nn.Module):
             # content_loss = self.content_loss(decoded_features, content_images)
             loss = content_loss
         elif self.mode == "style_transfer":
+            style_features = self.encoder(style_images)
             transfered_features = self.transfer(content_features, style_features)
             decoded_features = self.decoder(transfered_features)
 

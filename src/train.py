@@ -78,7 +78,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = None #"pretrained_model_399.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
+    pretrained_weights = "perceptual_model_399.pt" #"pretrained_model_399.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(

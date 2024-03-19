@@ -58,6 +58,14 @@ class Encoder(nn.Module):
                 self.model.add_module(str(num_layer), layer)
                 num_layer += 1
 
+        # Initialize weights
+        # for layer in self.preprocess:
+        #     if isinstance(layer, nn.Conv2d):
+        #         nn.init.kaiming_uniform_(layer.weight, nonlinearity='relu')
+        # for layer in self.model:
+        #     if isinstance(layer, nn.Conv2d):
+        #         nn.init.xavier_uniform_(layer.weight)
+
         self.preprocess.to(device)
         self.model.to(device)
 
