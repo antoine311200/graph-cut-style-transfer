@@ -5,7 +5,7 @@ from torchvision.models import vgg19, VGG19_Weights
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from src.models.model import TransferModel
 from src.dataset import ContentStyleDataset
@@ -57,7 +57,7 @@ def train_step(
             save_image(snapshot_images, f"snapshot_{i}.png", nrow=batch_size, ncols=3)
 
         if (i+1) % save_interval == 0:
-            torch.save(model.state_dict(), f"model_{i}.pt")
+            torch.save(model.state_dict(), f"perceptual_model_{i}.pt")
             print(f"Model saved at iteration {i}.")
 
 
@@ -78,7 +78,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = None#"pretrained_weights.pt"#None#"model_399.pt" #
+    pretrained_weights = "perceptual_model_399.pt" #"pretrained_model_399.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
@@ -92,7 +92,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         mode="pretrain"#"style_transfer"
     )
     optimizer = Adam(model.parameters(), lr=lr)
-    scheduler = None# CosineAnnealingLR(optimizer, num_iterations)
+    scheduler = CosineAnnealingLR(optimizer, num_iterations)#None# 
 
     print("Training the transfert model using the following parameters:")
     print(f"  - n_clusters: {n_clusters}")
@@ -123,8 +123,8 @@ if __name__ == "__main__":
         "alpha": 0.3,
         "lambd": 0.01,
         "gamma": 0.1,
-        "epochs": 5,
-        "lr": 2e-5,
+        "epochs": 15,
+        "lr": 3e-5,
     }
 
     train(
