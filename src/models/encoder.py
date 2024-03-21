@@ -64,6 +64,9 @@ class Encoder(nn.Module):
         logging.info(f"Encoder: x.shape: {x.shape}")
 
         features = []
+
+        logging.info(f"Encoder: No of blocks: {len(self.block_layers)}")
+
         for i, block in enumerate(self.block_layers):
             x = block(x)
             logging.info(f"Encoder: block: {i}, x.shape: {x.shape}")
