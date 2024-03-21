@@ -24,6 +24,9 @@ class TransferModel(nn.Module):
 
         if pretrained_weights: self.load_state_dict(torch.load(pretrained_weights))
 
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
         self.n_clusters = n_clusters
         self.alpha = alpha
         self.gamma = gamma
@@ -33,18 +36,10 @@ class TransferModel(nn.Module):
         self.style_loss = StyleLoss()
 
     def forward(self, content_images, style_images, output_image=False):
-
-        logging.info(f"Foward: content_images.shape: {content_images.shape}, style_images.shape: {style_images.shape}")
-
         content_features = self.encoder(content_images)
         all_style_features = self.encoder(style_images, all_features=True)
 
-        logging.info(f"Foward: content_features.shape: {content_features.shape}, all_style_features[-1].shape: {all_style_features[-1].shape}")
-
         transfered_features = self.transfer(content_features, all_style_features[-1])
-
-        logging.info(f"Foward: transfered_features.shape: {transfered_features.shape}")
-
         transfered_images = self.decoder(transfered_features)
 
         transfered_content_features = self.encoder(transfered_images)
