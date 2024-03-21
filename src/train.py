@@ -78,12 +78,10 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     test_dl = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)    
 
     model = TransferModel(
-        base_model=vgg19_bn(weights=VGG19_BN_Weights.DEFAULT),
         n_clusters=n_clusters,
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
-        device=device,
     ).to(device)
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
     scheduler = CosineAnnealingLR(optimizer, epochs)
