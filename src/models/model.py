@@ -26,7 +26,15 @@ class TransferModel(nn.Module):
         self.encoder = Encoder(base_model, blocks=blocks, device=device)
         self.decoder = Decoder(self.encoder.model, stop_layer=blocks[-1], device=device)
 
-        if pretrained_weights: self.load_state_dict(torch.load(pretrained_weights))
+        if pretrained_weights:
+            state_dict = torch.load(pretrained_weights)
+            state_dict["encoder.preprocess.0.weight"] = torch.tensor([
+                [[[  0.]], [[  0.]], [[255.]]],
+                [[[  0.]], [[255.]], [[  0.]]],
+                [[[255.]], [[  0.]], [[  0.]]]
+            ])
+            state_dict["encoder.preprocess.0.bias"] = torch.tensor([-103.9390, -116.7790, -123.6800])
+            self.load_state_dict(state_dict)
 
         self.n_clusters = n_clusters
         self.alpha = alpha
@@ -35,6 +43,17 @@ class TransferModel(nn.Module):
 
         self.content_loss = ContentLoss()
         self.style_loss = StyleLoss()
+
+        # # Set all parameters to require grad
+        for param in self.parameters():
+            param.requires_grad = True
+
+        # if mode == "pretrain":
+        #     for param in self.encoder.parameters():
+        #         param.requires_grad = False
+
+        # # Set the preprocess layer to not require grad
+        self.encoder.preprocess.requires_grad = False
 
         self.mode = mode
 
@@ -72,24 +91,6 @@ class TransferModel(nn.Module):
         return loss
 
     def transfer(self, content_features, style_features, num_workers=4):
-        # with Pool(processes=num_workers) as pool:
-        #     transfered_features = pool.starmap(
-        #         style_transfer,
-        #         [
-        #             (
-        #                 content_features[i].detach().cpu().numpy(),
-        #                 style_features[i].detach().cpu().numpy(),
-        #                 self.alpha,
-        #                 self.n_clusters,
-        #                 self.lambd,
-        #             )
-        #             for i in range(content_features.shape[0])
-        #         ],
-        #     )
-
-        # # List of Tensors to Tensor
-        # transfered_features = torch.stack(transfered_features)
-
         transfered_features = torch.zeros_like(
             content_features
         )  # (batch_size, channel, height, width)
