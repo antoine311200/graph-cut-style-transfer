@@ -3,6 +3,8 @@ from torch import nn
 import numpy as np
 from torchvision.models import vgg19, VGG19_Weights
 
+import logging
+
 class Normalization(nn.Module):
     """Normalization module for the Multimodal Style Transfer model."""
 
@@ -59,9 +61,12 @@ class Encoder(nn.Module):
         """
         x = self.normalization(x)
 
+        logging.info(f"Encoder: x.shape: {x.shape}")
+
         features = []
         for i, block in enumerate(self.block_layers):
             x = block(x)
+            logging.info(f"Encoder: block: {i}, x.shape: {x.shape}")
             if all_features:
                 features.append(x)
         if all_features:
