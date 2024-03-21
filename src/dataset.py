@@ -45,8 +45,8 @@ class ContentStyleDataset(Dataset):
         content_idx = self.permutation_content[idx]
         style_idx = self.permutation_style[idx]
     
-        content_image = Image.open(os.path.join(self.content_dir, self.content_images[content_idx]))
-        style_image = Image.open(os.path.join(self.style_dir, self.style_images[style_idx]))
+        content_image = Image.open(os.path.join(self.content_dir, self.content_images[content_idx])).convert('RGB')
+        style_image = Image.open(os.path.join(self.style_dir, self.style_images[style_idx])).convert('RGB')
 
         if self.transform:
             content_image = self.transform(content_image)
