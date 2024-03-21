@@ -23,9 +23,7 @@ def cluster_style(style_features, k=3):
         np.array: Cluster centers
         list: List of clusters
     """
-    style_features_view = style_features.reshape(
-        style_features.shape[0], -1
-    ).T  # (height * width, channel)
+    style_features_view = style_features.reshape(style_features.shape[0], -1).T  # (height * width, channel)
     kmeans = KMeans(n_clusters=k).fit(style_features_view)
 
     cluster_centers = kmeans.cluster_centers_  # (k, channel)
@@ -175,8 +173,6 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
         np.array: Transfered features
     """
     labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd)
-
-    # print(labels.shape, [cluster.shape[0] for cluster in cluster_list])
 
     transfered_features = np.zeros(content_features.shape)
     for i in range(k):

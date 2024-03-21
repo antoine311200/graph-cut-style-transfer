@@ -11,46 +11,54 @@ from src.models.model import TransferModel
 from src.dataset import ContentStyleDataset
 
 
-def test_step(model, test_dl, snapshot_interval=100):
+def test_step(model, test_dl, device, snapshot_interval=100):
     model.eval()
     losses = []
+    content_losses = []
+    style_losses = []
     batch_size = test_dl.batch_size
     progress_bar = tqdm(test_dl, desc="Testing", leave=False)
 
     with torch.no_grad():
         for i, (content_images, style_images) in enumerate(progress_bar):
-            content_images = content_images.to(model.device)
-            style_images = style_images.to(model.device)
+            content_images = content_images.to(device)
+            style_images = style_images.to(device)
 
 
             if i % snapshot_interval == 0:           
-                loss, images = model(content_images, style_images, output_image=True)
+                loss, (content_loss, style_loss), images = model(content_images, style_images, output_image=True)
                 snapshot_images = torch.cat([content_images, style_images, images], dim=0)
                 save_image(snapshot_images, f"snapshot_{i}.png", nrow=batch_size, ncols=3)
             else:
-                loss = model(content_images, style_images)
+                loss, (content_loss, style_loss) = model(content_images, style_images)
 
             losses.append(loss.item())
-            progress_bar.set_postfix({"loss": sum(losses) / len(losses)})
+            content_losses.append(content_loss.item())
+            style_losses.append(style_loss.item())
+            progress_bar.set_postfix({"loss": sum(losses) / len(losses), "content_loss": sum(content_losses) / len(content_losses), "style_loss": sum(style_losses) / len(style_losses)})
 
     return sum(losses) / len(losses)
 
-def train_step(model, train_dl, optimizer):
+def train_step(model, train_dl, optimizer, device):
     model.train()
     losses = []
+    content_losses = []
+    style_losses = []
     progress_bar = tqdm(train_dl, desc="Training", leave=False)
 
     for content_images, style_images in progress_bar:
-        content_images = content_images.to(model.device)
-        style_images = style_images.to(model.device)
+        content_images = content_images.to(device)
+        style_images = style_images.to(device)
 
-        loss = model(content_images, style_images)
+        loss, (content_loss, style_loss) = model(content_images, style_images)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         losses.append(loss.item())
-        progress_bar.set_postfix({"loss": sum(losses) / len(losses)})
+        content_losses.append(content_loss.item())
+        style_losses.append(style_loss.item())
+        progress_bar.set_postfix({"loss": sum(losses) / len(losses), "content_loss": sum(content_losses) / len(content_losses), "style_loss": sum(style_losses) / len(style_losses)})
 
     return sum(losses) / len(losses)
 
@@ -76,7 +84,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         gamma=gamma,
         lambd=lambd,
         device=device,
-    )
+    ).to(device)
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
     scheduler = CosineAnnealingLR(optimizer, epochs)
 
@@ -91,8 +99,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     best_loss = float("inf")
 
     for epoch in range(epochs):
-        train_loss = train_step(model, train_dl, optimizer)
-        test_loss = test_step(model, test_dl)
+        train_loss = train_step(model, train_dl, optimizer, device)
+        test_loss = test_step(model, test_dl, device)
         scheduler.step()
         print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
 
