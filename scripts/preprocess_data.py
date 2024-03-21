@@ -26,6 +26,9 @@ if __name__ == "__main__":
         image = resize_image(image, 512)
         image.save(f"./data/wikiart/{i}.jpg")
 
+    if not os.path.exists("./data/coco"):
+        os.makedirs("./data/coco")
+
     directory = os.listdir("./data/val2017")
     for i in tqdm(range(len(directory))):
         image = Image.open(f"./data/val2017/{directory[i]}")
