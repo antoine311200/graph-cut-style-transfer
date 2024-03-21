@@ -13,28 +13,23 @@ def resize_image(image, size):
         new_width = int(size * width / height)
     return image.resize((new_width, new_height))
 
-def process_image(dataset, i):
-    image = dataset["train"][i]["image"]
-    image = resize_image(image, 512)
-    image.save(f"graph-cut-style-transfer/data/wikiart/{i}.jpg")
-
 if __name__ == "__main__":
 
 
     dataset = load_dataset("huggan/wikiart")
 
-    if not os.path.exists("graph-cut-style-transfer/data/wikiart"):
-        os.makedirs("graph-cut-style-transfer/data/wikiart")
+    if not os.path.exists("./data/wikiart"):
+        os.makedirs("./data/wikiart")
 
     for i in tqdm(range(len(dataset["train"]))):
         image = dataset["train"][i]["image"] # JpegImageFile
         image = resize_image(image, 512)
-        image.save(f"graph-cut-style-transfer/data/wikiart/{i}.jpg")
+        image.save(f"./data/wikiart/{i}.jpg")
 
-    directory = os.listdir("graph-cut-style-transfer/data/val2017")
+    directory = os.listdir("./data/val2017")
     for i in tqdm(range(len(directory))):
-        image = Image.open(f"graph-cut-style-transfer/data/val2017/{directory[i]}")
+        image = Image.open(f"./data/val2017/{directory[i]}")
         image = resize_image(image, 512)
-        image.save(f"graph-cut-style-transfer/data/coco/{i}.jpg")
+        image.save(f"./data/coco/{i}.jpg")
 
     
