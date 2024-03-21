@@ -9,6 +9,8 @@ from tqdm import tqdm
 from src.models.model import TransferModel
 from src.dataset import ContentStyleDataset
 
+import logging
+
 
 def test_step(model, test_dl, device, snapshot_interval=100):
     model.eval()
@@ -63,6 +65,8 @@ def train_step(model, train_dl, optimizer, device):
 
 def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    logging.basicConfig(level=logging.INFO, filename="train.log", filemode="w")
 
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
