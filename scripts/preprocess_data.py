@@ -23,6 +23,9 @@ if __name__ == "__main__":
 
     dataset = load_dataset("huggan/wikiart")
 
+    if not os.path.exists("graph-cut-style-transfer/data/wikiart"):
+        os.makedirs("graph-cut-style-transfer/data/wikiart")
+
     for i in tqdm(range(len(dataset["train"]))):
         image = dataset["train"][i]["image"] # JpegImageFile
         image = resize_image(image, 512)
