@@ -66,8 +66,6 @@ def train_step(model, train_dl, optimizer, device):
 def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    logging.basicConfig(level=logging.INFO, filename="train.log", filemode="w")
-
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
 
@@ -122,6 +120,8 @@ if __name__ == "__main__":
         "epochs": 15,
         "lr": 1e-4,
     }
+    logging.basicConfig(level=logging.INFO, filename="./train.log")
+    logging.info(f"Training with the following parameters: {params}")
 
     train(
         **params
