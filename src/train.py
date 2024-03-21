@@ -1,7 +1,6 @@
 import torch
 from torch.optim import AdamW
 from torchvision.utils import save_image
-from torchvision.models import vgg19_bn, VGG19_BN_Weights
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
