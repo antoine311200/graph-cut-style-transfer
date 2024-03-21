@@ -11,32 +11,42 @@ transformations = transforms.Compose([
 ])
 
 class ContentStyleDataset(Dataset):
-    def __init__(self, content_dir, style_dir, mode="train", ratio=.8, max_length=2000, transform=transformations):
+    def __init__(self, content_dir, style_dir, transform=transformations, train=True, ratio_train=0.8):
         self.content_dir = content_dir
         self.style_dir = style_dir
         self.transform = transform
 
-        print(f"Loading {mode} dataset with {len(os.listdir(content_dir)[:int(max_length*ratio)])} content images and {len(os.listdir(style_dir)[:int(max_length*ratio)])} style images")
+        self.content_images = os.listdir(content_dir)
+        self.style_images = os.listdir(style_dir)
 
-        if mode == "train":
-            self.content_images = os.listdir(content_dir)[:int(max_length*ratio)]
-            self.style_images = os.listdir(style_dir)[:int(max_length*ratio)]
+        content_train_size = int(ratio_train*len(self.content_images))
+        style_train_size = int(ratio_train*len(self.style_images))
+
+        if train:
+            self.content_images = self.content_images[:content_train_size]
+            self.style_images = self.style_images[:style_train_size]
         else:
-            self.content_images = os.listdir(content_dir)[int(max_length*ratio):max_length]
-            self.style_images = os.listdir(style_dir)[int(max_length*ratio):max_length]
+            self.content_images = self.content_images[content_train_size:]
+            self.style_images = self.style_images[style_train_size:]
 
-        # Create a permutation of the style images to match the content images
-        permutation = np.random.permutation(len(self.style_images))
-        self.content_images = [self.content_images[i] for i in permutation]
-        self.style_images = [self.style_images[i] for i in permutation]
+        self.permutation_content = np.random.permutation(len(self.content_images))
+        self.permutation_style = np.random.permutation(len(self.style_images))
+
+        self.size = min(len(self.content_images), len(self.style_images))
+
+    def update_permutation(self):
+        self.permutation_content = np.random.permutation(len(self.content_images))
+        self.permutation_style = np.random.permutation(len(self.style_images))
 
     def __len__(self):
-        return len(self.content_images)
-
+        return self.size
+    
     def __getitem__(self, idx):
-        # Set to rgb
-        content_image = Image.open(os.path.join(self.content_dir, self.content_images[idx])).convert("RGB")
-        style_image = Image.open(os.path.join(self.style_dir, self.style_images[idx])).convert("RGB")
+        content_idx = self.permutation_content[idx]
+        style_idx = self.permutation_style[idx]
+    
+        content_image = Image.open(os.path.join(self.content_dir, self.content_images[content_idx]))
+        style_image = Image.open(os.path.join(self.style_dir, self.style_images[style_idx]))
 
         if self.transform:
             content_image = self.transform(content_image)
