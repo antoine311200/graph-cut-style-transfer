@@ -66,7 +66,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     content_dir = "./data/coco"
     style_dir = r"E:\Antoine\data\wikiart\wikiart"  # "./data/wikiart"
 
-    max_images = 2000#4000
+    max_images = 4000#4000
 
     dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="train")
     snapshot_dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="test")
@@ -78,7 +78,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = "pretrained_model_399.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
+    pretrained_weights = "base_model.pt"#"pretrain_21_03.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
@@ -89,7 +89,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         gamma=gamma,
         lambd=lambd,
         device=device,
-        mode="pretrain"#"style_transfer"
+        mode="style_transfer"#"full_pretrain"#
     )
     optimizer = Adam(model.parameters(), lr=lr)
     scheduler = CosineAnnealingLR(optimizer, num_iterations)#None# 
@@ -119,12 +119,12 @@ if __name__ == "__main__":
 
     params = {
         "batch_size": 8,
-        "n_clusters": 5,
+        "n_clusters": 3,
         "alpha": 0.3,
         "lambd": 0.01,
-        "gamma": 0.1,
+        "gamma": 0.05,
         "epochs": 25,
-        "lr": 8e-6,
+        "lr": 2e-7,
     }
 
     train(
