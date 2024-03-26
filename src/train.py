@@ -74,6 +74,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
 
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Test dataset size: {len(test_dataset)}")
+    logging.info(f"Train dataset size: {len(train_dataset)}")
+    logging.info(f"Test dataset size: {len(test_dataset)}")
 
     train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)
     test_dl = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)    
@@ -94,6 +96,13 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     print(f"  - gamma: {gamma}")
     print(f"  - epochs: {epochs}")
     print(f"  - lr: {lr}")
+    logging.info("Training the transfert model using the following parameters:")
+    logging.info(f"  - n_clusters: {n_clusters}")
+    logging.info(f"  - alpha: {alpha}")
+    logging.info(f"  - lambd: {lambd}")
+    logging.info(f"  - gamma: {gamma}")
+    logging.info(f"  - epochs: {epochs}")
+    logging.info(f"  - lr: {lr}")
 
     best_loss = float("inf")
 
