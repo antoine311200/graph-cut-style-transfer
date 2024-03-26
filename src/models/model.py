@@ -51,6 +51,20 @@ class TransferModel(nn.Module):
 
             loss = content_loss
             info = {"content_loss": content_loss}
+        elif self.mode == "full_pretrain":
+            all_content_features = self.encoder(content_images, all_features=True)
+            content_features = all_content_features[-1]
+            decoded_features = self.decoder(content_features)
+            if output_image:
+                return decoded_features
+            all_encoded_features = self.encoder(decoded_features, all_features=True)
+            content_loss = sum([
+                self.content_loss(encoded_features, content_features)
+                for encoded_features, content_features in zip(all_encoded_features, all_content_features)
+            ])
+            distrib_loss = self.style_loss(all_encoded_features, all_content_features)
+            loss = content_loss + self.gamma*distrib_loss
+            info = {"content_loss": content_loss, "distrib_loss": distrib_loss}
         elif self.mode == "style_transfer":
             content_features = self.encoder(content_images)
             all_style_features = self.encoder(style_images, all_features=True)

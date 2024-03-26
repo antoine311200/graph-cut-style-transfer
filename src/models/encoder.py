@@ -2,8 +2,6 @@ import torch
 from torch import nn
 from torchvision.models import vgg19, VGG19_Weights
 
-cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406])
-cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225])
 
 class Normalization(nn.Module):
     """Normalize a tensor image with mean and standard deviation."""
@@ -13,11 +11,15 @@ class Normalization(nn.Module):
         # .view the mean and std to make them [C x 1 x 1] so that they can
         # directly work with image Tensor of shape [B x C x H x W].
         # B is batch size. C is number of channels. H is height and W is width.
-        self.mean = cnn_normalization_mean.clone().detach().view(-1, 1, 1)
-        self.std = cnn_normalization_std.clone().detach().view(-1, 1, 1)
+        self.cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406])
+        self.cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225])
+        self.mean = self.cnn_normalization_mean.clone().detach().view(-1, 1, 1)
+        self.std = self.cnn_normalization_std.clone().detach().view(-1, 1, 1)
 
     def forward(self, img):
         # normalize ``img``
+        self.mean = self.mean.to(img.device)
+        self.std = self.std.to(img.device)
         return (img - self.mean) / self.std
 
 class Encoder(nn.Module):
@@ -29,11 +31,11 @@ class Encoder(nn.Module):
         blocks: list[int] = [0, 4, 11, 18, 31],
     ):
         super(Encoder, self).__init__()
-        # self.normalization = Normalization(norm_mean, norm_std, device)
+        # self.normalization = Normalization()
 
         if base_model is None:
             base_model = vgg19(weights=VGG19_Weights.DEFAULT)
-        
+
         # vgg extraction
         model = nn.Sequential()
 

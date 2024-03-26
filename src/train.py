@@ -80,7 +80,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = None
+    pretrained_weights = None #"perceptual_model_149.pt"#"new_base_model.pt"#"base_model.pt"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
@@ -90,7 +90,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
-        mode="style_transfer"#"full_pretrain"#
+        mode="full_pretrain"#"style_transfer"#"full_pretrain"#
     ).to(device)
     optimizer = Adam(model.parameters(), lr=lr)
     scheduler = CosineAnnealingLR(optimizer, num_iterations)#None# 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         "lambd": 0.01,
         "gamma": 0.05,
         "epochs": 25,
-        "lr": 2e-7,
+        "lr": 3e-7, # 2e-7
     }
 
     train(
