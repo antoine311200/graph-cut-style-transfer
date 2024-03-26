@@ -12,7 +12,10 @@ from src.dataset import ContentStyleDataset
 import logging
 
 
-def test_step(model, test_dl, device, snapshot_interval=100):
+def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
+    if logger is None:
+        logger = logging.getLogger("Testing")
+
     model.eval()
     losses = []
     content_losses = []
@@ -21,15 +24,15 @@ def test_step(model, test_dl, device, snapshot_interval=100):
     progress_bar = tqdm(test_dl, desc="Testing", leave=False)
 
     with torch.no_grad():
-        for i, (content_images, style_images) in enumerate(progress_bar):
+        for k, (content_images, style_images) in enumerate(progress_bar):
             content_images = content_images.to(device)
             style_images = style_images.to(device)
 
 
-            if i % snapshot_interval == 0:           
+            if k % snapshot_interval == 0:           
                 loss, (content_loss, style_loss), images = model(content_images, style_images, output_image=True)
                 snapshot_images = torch.cat([content_images, style_images, images], dim=0)
-                save_image(snapshot_images, f"./data/snapshots/snapshot_{i}.png", nrow=batch_size, ncols=3)
+                save_image(snapshot_images, f"./data/snapshots/snapshot_{k}.png", nrow=batch_size, ncols=3)
             else:
                 loss, (content_loss, style_loss) = model(content_images, style_images)
 
@@ -37,17 +40,21 @@ def test_step(model, test_dl, device, snapshot_interval=100):
             content_losses.append(content_loss.item())
             style_losses.append(style_loss.item())
             progress_bar.set_postfix({"loss": sum(losses) / len(losses), "content_loss": sum(content_losses) / len(content_losses), "style_loss": sum(style_losses) / len(style_losses)})
+            logger.info(f"Batch {k+1}/{len(test_dl)} - Loss: {loss.item()} - Content loss: {content_loss.item()} - Style loss: {style_loss.item()}")
 
     return sum(losses) / len(losses)
 
-def train_step(model, train_dl, optimizer, device):
+def train_step(model, train_dl, optimizer, device, logger=None):
+    if logger is None:
+        logger = logging.getLogger("Training")
+
     model.train()
     losses = []
     content_losses = []
     style_losses = []
     progress_bar = tqdm(train_dl, desc="Training", leave=False)
 
-    for content_images, style_images in progress_bar:
+    for k, (content_images, style_images) in enumerate(progress_bar):
         content_images = content_images.to(device)
         style_images = style_images.to(device)
 
@@ -60,6 +67,7 @@ def train_step(model, train_dl, optimizer, device):
         content_losses.append(content_loss.item())
         style_losses.append(style_loss.item())
         progress_bar.set_postfix({"loss": sum(losses) / len(losses), "content_loss": sum(content_losses) / len(content_losses), "style_loss": sum(style_losses) / len(style_losses)})
+        logger.info(f"Batch {k+1}/{len(train_dl)} - Loss: {loss.item()} - Content loss: {content_loss.item()} - Style loss: {style_loss.item()}")
 
     return sum(losses) / len(losses)
 
@@ -110,8 +118,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     best_loss = float("inf")
 
     for epoch in range(epochs):
-        train_loss = train_step(model, train_dl, optimizer, device)
-        test_loss = test_step(model, test_dl, device)
+        train_loss = train_step(model, train_dl, optimizer, device, logger)
+        test_loss = test_step(model, test_dl, device, logger)
         scheduler.step()
         print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
         logger.info(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
