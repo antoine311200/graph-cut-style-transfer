@@ -45,14 +45,8 @@ class TransferModel(nn.Module):
         transfered_content_features = self.encoder(transfered_images)
         all_transfered_style_features = self.encoder(transfered_images, all_features=True)
 
-        logging.info(f"Content features: {content_features}")
-        logging.info(f"Style features: {all_style_features}")
-        logging.info(f"Transfered features: {transfered_content_features}")
-        logging.info(f"Transfered style features: {all_transfered_style_features}")
-
         content_loss = self.content_loss(content_features, transfered_content_features)
         style_loss = self.style_loss(all_style_features, all_transfered_style_features)
-
 
         loss = content_loss + self.alpha * style_loss
 

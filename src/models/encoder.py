@@ -3,7 +3,6 @@ from torch import nn
 import numpy as np
 from torchvision.models import vgg19, VGG19_Weights
 
-import logging
 
 class Normalization(nn.Module):
     """Normalization module for the Multimodal Style Transfer model."""
@@ -18,7 +17,6 @@ class Normalization(nn.Module):
 
     def forward(self, img):
         return (img - self.mean) / self.std
-
 
 def extract_encoder(vgg19):
     feat_per_block = [2, 2, 4, 4, 4]
@@ -60,16 +58,9 @@ class Encoder(nn.Module):
             torch.Tensor: Encoded tensor
         """
         x = self.normalization(x)
-
-        logging.info(f"Encoder: x.shape: {x.shape}")
-
         features = []
-
-        logging.info(f"Encoder: No of blocks: {len(self.block_layers)}")
-
         for i, block in enumerate(self.block_layers):
             x = block(x)
-            logging.info(f"Encoder: block: {i}, x.shape: {x.shape}")
             if all_features:
                 features.append(x)
         if all_features:
