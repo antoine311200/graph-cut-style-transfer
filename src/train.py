@@ -32,7 +32,7 @@ def train_step(
         content_images = content_images.to(device)
         style_images = style_images.to(device)
 
-        loss = model(content_images, style_images)
+        loss, info = model(content_images, style_images)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -49,7 +49,7 @@ def train_step(
             snapshot_style = snapshot_style.to(device)
 
             with torch.no_grad():
-                snapshot_batch = model(
+                loss, snapshot_batch, info = model(
                     snapshot_content, snapshot_style, output_image=True
                 )
 
@@ -80,7 +80,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = "base_model.pt"#"pretrain_21_03.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
+    pretrained_weights = None
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
