@@ -73,4 +73,4 @@ if __name__ == "__main__":
                 "transfered_features": transfered_features
             }, f"./data/preprocessed/diversity_{k}/transfered_{i}.pt")
 
-            logger.info(f"Preprocessed image {i}/{len(content_img)} from diversity {k} in {time.time() - start} seconds")
+            logger.info(f"Preprocessed image {i}/{len(content_imgs)} from diversity {k} in {time.time() - start} seconds")
