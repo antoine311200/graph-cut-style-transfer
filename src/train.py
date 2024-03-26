@@ -94,7 +94,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
-        
+
         mode="pretrain"
     ).to(device)
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
@@ -112,7 +112,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
 
     for epoch in range(epochs):
         train_loss = train_step(model, train_dl, optimizer, device, logger)
-        test_loss = test_step(model, test_dl, device, logger)
+        test_loss = test_step(model, test_dl, device, snapshot_interval=100, logger=logger)
         scheduler.step()
         logger.info(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
 
