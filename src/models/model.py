@@ -1,10 +1,11 @@
 import torch
 from torch import nn
 
-from multiprocessing import Pool
+import logging
 
 from src.models.encoder import Encoder
 from src.models.decoder import Decoder
+
 
 from src.energy import style_transfer
 from src.loss import ContentLoss, StyleLoss
@@ -46,8 +47,14 @@ class TransferModel(nn.Module):
             content_features = self.encoder(content_images)
             decoded_images = self.decoder(content_features)
 
+            logger = logging.getLogger("Training")
+            logger.debug(f"content_features: {content_features}")
+            logger.debug(f"decoded_images: {decoded_images}")
+
             encoded_features = self.encoder(decoded_images)
             content_loss = self.content_loss(encoded_features, content_features)
+
+            logger.debug(f"encoded_features: {encoded_features}")
 
             loss = content_loss
             info = {"content_loss": content_loss}
