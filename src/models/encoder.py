@@ -69,13 +69,14 @@ class Encoder(nn.Module):
 
         # print(self.model)
 
-        # Freeze the model
-        # for param in self.model.parameters():
-        #     param.requires_grad = False
 
         self.block_layers = []
         for i in range(len(self.blocks) - 1):
             self.block_layers.append(self.model[self.blocks[i] : self.blocks[i + 1]])
+
+        # Freeze the model
+        for param in self.model.parameters():
+            param.requires_grad = False
 
 
     def forward(self, x, all_features: bool = False):
