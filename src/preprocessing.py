@@ -3,6 +3,7 @@ from src.models.encoder import Encoder
 from src.energy import style_transfer
 
 import os
+import time
 import torch
 import torchvision.transforms as T
 import logging
@@ -47,27 +48,29 @@ if __name__ == "__main__":
             os.makedirs(f"./data/preprocessed/diversity_{k}")
 
         for i, content_img in enumerate(content_imgs):
-                content_img_path = os.path.join(content_dir, content_img)
-                style_img_path = os.path.join(style_dir, style_imgs[i])
+            start = time.time()
 
-                content_img = Image.open(content_img_path).convert("RGB")
-                style_img = Image.open(style_img_path).convert("RGB")
+            content_img_path = os.path.join(content_dir, content_img)
+            style_img_path = os.path.join(style_dir, style_imgs[i])
 
-                content_img = crop(content_img)
-                style_img = crop(style_img)
+            content_img = Image.open(content_img_path).convert("RGB")
+            style_img = Image.open(style_img_path).convert("RGB")
 
-                content_img = to_tensor(content_img).to(device)
-                style_img = to_tensor(style_img).to(device)
+            content_img = crop(content_img)
+            style_img = crop(style_img)
 
-                content_features = encoder(content_img.unsqueeze(0))
-                all_style_features = encoder(style_img.unsqueeze(0), all_features=True)
+            content_img = to_tensor(content_img).to(device)
+            style_img = to_tensor(style_img).to(device)
 
-                transfered_features = style_transfer(content_features.squeeze(0).cpu().numpy(), all_style_features[-1].squeeze(0).cpu().numpy(), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
+            content_features = encoder(content_img.unsqueeze(0))
+            all_style_features = encoder(style_img.unsqueeze(0), all_features=True)
 
-                torch.save({
-                    "content_features": content_features,
-                    "all_style_features": all_style_features,
-                    "transfered_features": transfered_features
-                }, f"./data/preprocessed/diversity_{k}/transfered_{i}.pt")
+            transfered_features = style_transfer(content_features.squeeze(0).cpu().numpy(), all_style_features[-1].squeeze(0).cpu().numpy(), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
 
-                logger.info(f"Preprocessed image {i} from diversity {k}")
+            torch.save({
+                "content_features": content_features,
+                "all_style_features": all_style_features,
+                "transfered_features": transfered_features
+            }, f"./data/preprocessed/diversity_{k}/transfered_{i}.pt")
+
+            logger.info(f"Preprocessed image {i} from diversity {k} in {time.time() - start} seconds")
