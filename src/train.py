@@ -10,6 +10,7 @@ from collections import defaultdict
 from src.models.model import TransferModel
 from src.dataset import ContentStyleDataset
 
+import os
 import logging
 
 def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
@@ -79,6 +80,9 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
 
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
+
+    if not os.path.exists("./data/snapshots"):
+        os.makedirs("./data/snapshots")
 
     train_dataset = ContentStyleDataset(content_dir, style_dir, mode="train")
     test_dataset = ContentStyleDataset(content_dir, style_dir, mode="test")
