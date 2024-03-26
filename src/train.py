@@ -41,7 +41,7 @@ def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
                 infos[key].append(value.item())
 
             progress_bar.set_postfix({"loss": sum(losses) / len(losses)}.update({key: sum(value) / len(value) for key, value in infos.items()}))
-            logger.info(f"Batch {k+1}/{len(test_dl)} - Loss: {loss.item()}" + "".join([f" - {key}: {value.item()}" for key, value in info.items()]))
+            logger.info(f"Batch (test) {k+1}/{len(test_dl)} - Loss: {loss.item()}" + "".join([f" - {key}: {value.item()}" for key, value in info.items()]) + r"\r")
 
     return sum(losses) / len(losses)
 
@@ -68,7 +68,7 @@ def train_step(model, train_dl, optimizer, device, logger=None):
             infos[key].append(value.item())
 
         progress_bar.set_postfix({"loss": sum(losses) / len(losses)}.update({key: sum(value) / len(value) for key, value in infos.items()}))
-        logger.info(f"Batch {k+1}/{len(train_dl)} - Loss: {loss.item()}" + "".join([f" - {key}: {value.item()}" for key, value in info.items()]))
+        logger.info(f"\rBatch (train) {k+1}/{len(train_dl)} - Loss: {loss.item()}" + "".join([f" - {key}: {value.item()}" for key, value in info.items()]) + r"\r")
 
     return sum(losses) / len(losses)
 
@@ -118,7 +118,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         train_loss = train_step(model, train_dl, optimizer, device, logger)
         test_loss = test_step(model, test_dl, device, snapshot_interval=100, logger=logger)
         scheduler.step()
-        logger.info(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
+        logger.info(f"\nEpoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}\n")
 
         if test_loss < best_loss:
             best_loss = test_loss
