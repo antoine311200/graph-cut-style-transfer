@@ -70,7 +70,7 @@ class TransferModel(nn.Module):
             raise ValueError("Invalid mode")
 
         if output_image:
-            return loss, decoded_images, info
+            return loss, info, decoded_images
         return loss, info
 
     def transfer(self, content_features, style_features):
