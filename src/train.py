@@ -68,7 +68,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
 
-    max_images = 4000#4000
+    max_images = 4000
 
     dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="train")
     snapshot_dataset = ContentStyleDataset(content_dir, style_dir, max_length=max_images, mode="test")
