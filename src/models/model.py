@@ -10,6 +10,29 @@ from src.models.decoder import Decoder
 from src.energy import style_transfer
 from src.loss import ContentLoss, StyleLoss
 
+cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406])
+cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225])
+
+class ToImage(nn.Module):
+    """Normalize a tensor image with mean and standard deviation."""
+
+    def __init__(self):
+        super(ToImage, self).__init__()
+        # .view the mean and std to make them [C x 1 x 1] so that they can
+        # directly work with image Tensor of shape [B x C x H x W].
+        # B is batch size. C is number of channels. H is height and W is width.
+        self.mean = cnn_normalization_mean.clone().detach().view(-1, 1, 1)
+        self.std = cnn_normalization_std.clone().detach().view(-1, 1, 1)
+
+        self.mean = nn.Parameter(self.mean, requires_grad=False)
+        self.std = nn.Parameter(self.std, requires_grad=False)
+
+    def forward(self, tensor):
+        img = tensor * self.std + self.mean
+        img = torch.clamp(img, 0, 1) * 255
+        return img.type(torch.uint8)
+
+
 class TransferModel(nn.Module):
     def __init__(
         self,
@@ -28,6 +51,7 @@ class TransferModel(nn.Module):
         super(TransferModel, self).__init__()
         self.encoder = Encoder(base_model, blocks=blocks)
         self.decoder = Decoder(self.encoder)
+        self.to_image = ToImage()
 
         if pretrained_weights:
             state_dict = torch.load(pretrained_weights)
@@ -71,7 +95,7 @@ class TransferModel(nn.Module):
             raise ValueError("Invalid mode")
 
         if output_image:
-            return loss, info, decoded_images
+            return loss, info, self.to_image(decoded_images)
         return loss, info
 
     def transfer(self, content_features, style_features):

@@ -16,6 +16,9 @@ class Normalization(nn.Module):
         self.mean = cnn_normalization_mean.clone().detach().view(-1, 1, 1)
         self.std = cnn_normalization_std.clone().detach().view(-1, 1, 1)
 
+        self.mean = nn.Parameter(self.mean, requires_grad=False)
+        self.std = nn.Parameter(self.std, requires_grad=False)
+
     def forward(self, img):
         # normalize ``img``
         return (img - self.mean) / self.std
@@ -29,7 +32,7 @@ class Encoder(nn.Module):
         blocks: list[int] = [0, 4, 11, 18, 31],
     ):
         super(Encoder, self).__init__()
-        # self.normalization = Normalization(norm_mean, norm_std, device)
+        self.normalization = Normalization()
 
         if base_model is None:
             base_model = vgg19(weights=VGG19_Weights.DEFAULT)
@@ -80,7 +83,7 @@ class Encoder(nn.Module):
         Returns:
             torch.Tensor: Encoded tensor
         """
-        # x = self.normalization(x)
+        x = self.normalization(x)
         features = []
         for layer in self.block_layers:
             x = layer(x)
