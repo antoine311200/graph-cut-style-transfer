@@ -63,8 +63,11 @@ def train_step(model, train_dl, optimizer, device):
 
     return sum(losses) / len(losses)
 
-def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8):
+def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8, logger=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if logger is None:
+        logger = logging.getLogger("Training")
 
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
@@ -74,8 +77,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
 
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Test dataset size: {len(test_dataset)}")
-    logging.info(f"Train dataset size: {len(train_dataset)}")
-    logging.info(f"Test dataset size: {len(test_dataset)}")
+    logger.info(f"Train dataset size: {len(train_dataset)}")
+    logger.info(f"Test dataset size: {len(test_dataset)}")
 
     train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)
     test_dl = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)    
@@ -96,14 +99,14 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     print(f"  - gamma: {gamma}")
     print(f"  - epochs: {epochs}")
     print(f"  - lr: {lr}")
-    logging.info("Training the transfert model using the following parameters:")
-    logging.info(f"  - n_clusters: {n_clusters}")
-    logging.info(f"  - alpha: {alpha}")
-    logging.info(f"  - lambd: {lambd}")
-    logging.info(f"  - gamma: {gamma}")
-    logging.info(f"  - epochs: {epochs}")
-    logging.info(f"  - lr: {lr}")
-
+    logger.info("Training the transfert model using the following parameters:")
+    logger.info(f"  - n_clusters: {n_clusters}")
+    logger.info(f"  - alpha: {alpha}")
+    logger.info(f"  - lambd: {lambd}")
+    logger.info(f"  - gamma: {gamma}")
+    logger.info(f"  - epochs: {epochs}")
+    logger.info(f"  - lr: {lr}")
+    
     best_loss = float("inf")
 
     for epoch in range(epochs):
@@ -111,12 +114,12 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         test_loss = test_step(model, test_dl, device)
         scheduler.step()
         print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
-        logging.info(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
+        logger.info(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss} - Test loss: {test_loss}")
 
         if test_loss < best_loss:
             best_loss = test_loss
             print("Saving best model")
-            logging.info("Saving best model")
+            logger.info("Saving best model")
             torch.save(model.state_dict(), "best_model.pth")
 
 
@@ -131,9 +134,18 @@ if __name__ == "__main__":
         "epochs": 15,
         "lr": 1e-4,
     }
-    logging.basicConfig(level=logging.INFO, filename="./train.log")
-    logging.info(f"Training with the following parameters: {params}")
+
+    logger = logging.getLogger("Training")
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler("training.log")
+    fh.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    logger.info(f"Training with the following parameters: {params}")
 
     train(
-        **params
+        **params,
+        logger=logger
     )
