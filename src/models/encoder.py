@@ -46,6 +46,12 @@ class Encoder(nn.Module):
             nn.Conv2d(3, 3, 1),
             nn.ReflectionPad2d((1, 1, 1, 1)),
         )
+        self.preprocess[0].weight.data = torch.tensor([
+            [[[  0.]], [[  0.]], [[255.]]],
+            [[[  0.]], [[255.]], [[  0.]]],
+            [[[255.]], [[  0.]], [[  0.]]]
+        ])
+        self.preprocess[0].bias.data = torch.tensor([-103.9390, -116.7790, -123.6800])
         self.model = nn.Sequential()
         num_layer = 0
         for i, layer in enumerate(base_model.features):
@@ -58,28 +64,20 @@ class Encoder(nn.Module):
                 self.model.add_module(str(num_layer), layer)
                 num_layer += 1
 
-        # Initialize weights
-        # for layer in self.preprocess:
-        #     if isinstance(layer, nn.Conv2d):
-        #         nn.init.kaiming_uniform_(layer.weight, nonlinearity='relu')
-        # for layer in self.model:
-        #     if isinstance(layer, nn.Conv2d):
-        #         nn.init.xavier_uniform_(layer.weight)
-
         self.preprocess.to(device)
         self.model.to(device)
 
-        print(self.model)
+        # print(self.model)
 
-        # Freeze the model
-        # for param in self.model.parameters():
-        #     param.requires_grad = False
 
         self.block_layers = []
         for i in range(len(self.blocks) - 1):
             self.block_layers.append(self.model[self.blocks[i] : self.blocks[i + 1]])
 
-        print(self.block_layers)
+        # Freeze the model
+        for param in self.model.parameters():
+            param.requires_grad = False
+
 
     def forward(self, x, all_features: bool = False):
         """Forward pass through the encoder model.
