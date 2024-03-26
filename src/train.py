@@ -80,8 +80,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
 
-    train_dataset = ContentStyleDataset(content_dir, style_dir, train=True)
-    test_dataset = ContentStyleDataset(content_dir, style_dir, train=False)
+    train_dataset = ContentStyleDataset(content_dir, style_dir, mode="train")
+    test_dataset = ContentStyleDataset(content_dir, style_dir, mode="test")
 
     logger.info(f"Train dataset size: {len(train_dataset)}")
     logger.info(f"Test dataset size: {len(test_dataset)}")
