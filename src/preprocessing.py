@@ -41,6 +41,9 @@ if __name__ == "__main__":
     for k in range(params["n_diversity"]):
         permutation = np.random.permutation(len(style_imgs))
 
+        if not os.path.exists(f"./data/preprocessed/diversity_{k}"):
+            os.makedirs(f"./data/preprocessed/diversity_{k}")
+
         for i, content_img in enumerate(content_imgs):
                 content_img_path = os.path.join(content_dir, content_img)
                 style_img_path = os.path.join(style_dir, style_imgs[i])
@@ -57,15 +60,12 @@ if __name__ == "__main__":
                 content_features = encoder(content_img.unsqueeze(0))
                 all_style_features = encoder(style_img.unsqueeze(0), all_features=True)
 
-                logger.info(f"Shapes: content_features {content_features.shape}, all_style_features {all_style_features[-1].shape}")
+                transfered_features = style_transfer(content_features.squeeze(0), all_style_features[-1].squeeze(0), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
 
-                break
-                # transfered_features = style_transfer(content_features, all_style_features[-1], alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
+                torch.save({
+                    "content_features": content_features,
+                    "all_style_features": all_style_features,
+                    "transfered_features": transfered_features
+                }, f"./data/preprocessed/diversity_{k}/transfered_{i}.pt")
 
-                # torch.save({
-                #     "content_features": content_features,
-                #     "all_style_features": all_style_features,
-                #     "transfered_features": transfered_features
-                # }, f"./data/preprocessed/diversity_{k}/transfered_{i}.pt")
-
-                # logger.info(f"Preprocessed image {i} from diversity {k}")
+                logger.info(f"Preprocessed image {i} from diversity {k}")
