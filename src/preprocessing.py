@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 content_features = encoder(content_img.unsqueeze(0))
                 all_style_features = encoder(style_img.unsqueeze(0), all_features=True)
 
-                transfered_features = style_transfer(content_features.squeeze(0), all_style_features[-1].squeeze(0), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
+                transfered_features = style_transfer(content_features.squeeze(0).numpy(), all_style_features[-1].squeeze(0).numpy(), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
 
                 torch.save({
                     "content_features": content_features,
