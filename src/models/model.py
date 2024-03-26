@@ -48,13 +48,13 @@ class TransferModel(nn.Module):
             decoded_images = self.decoder(content_features)
 
             logger = logging.getLogger("Training")
-            logger.debug(f"content_features: {content_features}")
-            logger.debug(f"decoded_images: {decoded_images}")
+            logger.info(f"content_features: {content_features}")
+            logger.info(f"decoded_images: {decoded_images}")
 
             encoded_features = self.encoder(decoded_images)
             content_loss = self.content_loss(encoded_features, content_features)
 
-            logger.debug(f"encoded_features: {encoded_features}")
+            logger.info(f"encoded_features: {encoded_features}")
 
             loss = content_loss
             info = {"content_loss": content_loss}
