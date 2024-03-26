@@ -28,7 +28,9 @@ if __name__ == "__main__":
     content_dir = "./data/coco"
     style_dir = "./data/wikiart"
 
-    encoder = Encoder()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    encoder = Encoder().to(device)
 
     content_imgs = os.listdir(content_dir)
     style_imgs = os.listdir(style_dir)
@@ -54,13 +56,13 @@ if __name__ == "__main__":
                 content_img = crop(content_img)
                 style_img = crop(style_img)
 
-                content_img = to_tensor(content_img)
-                style_img = to_tensor(style_img)
+                content_img = to_tensor(content_img).to(device)
+                style_img = to_tensor(style_img).to(device)
 
                 content_features = encoder(content_img.unsqueeze(0))
                 all_style_features = encoder(style_img.unsqueeze(0), all_features=True)
 
-                transfered_features = style_transfer(content_features.squeeze(0).numpy(), all_style_features[-1].squeeze(0).numpy(), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
+                transfered_features = style_transfer(content_features.squeeze(0).cpu().numpy(), all_style_features[-1].squeeze(0).cpu().numpy(), alpha=params["alpha"], k=params["n_clusters"], lambd=params["lambd"])
 
                 torch.save({
                     "content_features": content_features,
