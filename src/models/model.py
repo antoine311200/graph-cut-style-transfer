@@ -30,12 +30,6 @@ class TransferModel(nn.Module):
 
         if pretrained_weights:
             state_dict = torch.load(pretrained_weights)
-            # state_dict["encoder.preprocess.0.weight"] = torch.tensor([
-            #     [[[  0.]], [[  0.]], [[255.]]],
-            #     [[[  0.]], [[255.]], [[  0.]]],
-            #     [[[255.]], [[  0.]], [[  0.]]]
-            # ])
-            # state_dict["encoder.preprocess.0.bias"] = torch.tensor([-103.9390, -116.7790, -123.6800])
             self.load_state_dict(state_dict)
 
         self.n_clusters = n_clusters
@@ -48,57 +42,38 @@ class TransferModel(nn.Module):
         self.mode = mode
 
     def forward(self, content_images, style_images, output_image=False):
-
         if self.mode == "pretrain":
             content_features = self.encoder(content_images)
-            decoded_features = self.decoder(content_features) # Shape: (batch_size, channel, height, width)
-            if output_image:
-                return decoded_features
-            encoded_features = self.encoder(decoded_features)
+            decoded_images = self.decoder(content_features)
+
+            encoded_features = self.encoder(decoded_images)
             content_loss = self.content_loss(encoded_features, content_features)
-            # content_loss = self.content_loss(decoded_features, content_images)
+
             loss = content_loss
-        elif self.mode == "full_pretrain":
-            all_content_features = self.encoder(content_images, all_features=True)
-            content_features = all_content_features[-1]
-            decoded_features = self.decoder(content_features)
-            if output_image:
-                return decoded_features
-            all_encoded_features = self.encoder(decoded_features, all_features=True)
-            content_loss = sum([
-                self.content_loss(encoded_features, content_features)
-                for encoded_features, content_features in zip(all_encoded_features, all_content_features)
-            ])
-            distrib_loss = self.style_loss(all_encoded_features, all_content_features)
-            loss = content_loss + self.gamma*distrib_loss
+            info = {"content_loss": content_loss}
         elif self.mode == "style_transfer":
-            # content_features = self.encoder(content_images)
-            all_content_features = self.encoder(content_images, all_features=True)
-            content_features = all_content_features[-1]
-            style_features = self.encoder(style_images)
-            transfered_features = self.transfer(content_features, style_features)
-            decoded_features = self.decoder(transfered_features)
-
-            if output_image:
-                return decoded_features
-
-            all_encoded_features = self.encoder(decoded_features, all_features=True)
+            content_features = self.encoder(content_images)
             all_style_features = self.encoder(style_images, all_features=True)
-            encoded_features = all_encoded_features[-1]
 
-            # content_loss = self.content_loss(encoded_features, content_features)
-            content_loss = sum([
-                self.content_loss(encoded_features, content_features)
-                for encoded_features, content_features in zip(all_encoded_features, all_content_features)
-            ])
-            style_loss = self.style_loss(all_encoded_features, all_style_features)
-            loss = content_loss + self.gamma*style_loss
+            transfered_features = self.transfer(content_features, all_style_features[-1])
+            decoded_images = self.decoder(transfered_features)
+
+            transfered_content_features = self.encoder(decoded_images)
+            all_transfered_style_features = self.encoder(decoded_images, all_features=True)
+
+            content_loss = self.content_loss(content_features, transfered_content_features)
+            style_loss = self.style_loss(all_style_features, all_transfered_style_features)
+
+            loss = content_loss + self.gamma * style_loss
+            info = {"content_loss": content_loss, "style_loss": style_loss}
         else:
             raise ValueError("Invalid mode")
 
-        return loss
+        if output_image:
+            return loss, decoded_images, info
+        return loss, info
 
-    def transfer(self, content_features, style_features, num_workers=4):
+    def transfer(self, content_features, style_features):
         transfered_features = torch.zeros_like(
             content_features
         )  # (batch_size, channel, height, width)
