@@ -7,7 +7,7 @@ class ContentLoss(nn.Module):
     """
 
     def forward(self, output_features, content_features):
-        self.loss = nn.functional.mse_loss(output_features, content_features)
+        self.loss = nn.functional.mse_loss(output_features, content_features, reduction="mean")
         return self.loss
 
 class StyleLoss(nn.Module):
@@ -31,6 +31,6 @@ class StyleLoss(nn.Module):
             style_mean = style_features.mean(dim=[2, 3], keepdim=True)
             style_std = style_features.std(dim=[2, 3], keepdim=True)
 
-            layer_loss = nn.functional.mse_loss(content_mean, style_mean) + nn.functional.mse_loss(content_std, style_std)
+            layer_loss = nn.functional.mse_loss(content_mean, style_mean, reduce="mean") + nn.functional.mse_loss(content_std, style_std, reduction="mean")
             self.loss += layer_loss
         return self.loss
