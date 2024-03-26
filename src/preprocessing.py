@@ -20,7 +20,7 @@ if __name__ == "__main__":
     logger.addHandler(fh)
 
     params = {
-        "n_diversity": 1,
+        "n_diversity": 3,
         "n_clusters": 3,
         "alpha": 0.3,
         "lambd": 0.1,
