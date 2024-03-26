@@ -130,15 +130,14 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
             logger.info("Saving best model")
             torch.save(model.state_dict(), "best_model.pth")
 
-
 if __name__ == "__main__":
 
     params = {
         "batch_size": 8,
-        "n_clusters": 5,
+        "n_clusters": 3,
         "alpha": 0.3,
-        "lambd": 0.01,
-        "gamma": 0.1,
+        "lambd": 0.1,
+        "gamma": 0.01,
         "epochs": 15,
         "lr": 1e-4,
     }

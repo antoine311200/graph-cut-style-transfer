@@ -43,6 +43,9 @@ class Encoder(nn.Module):
         self.normalization = Normalization()
         self.block_layers = nn.ModuleList([nn.Sequential(*block) for block in self.block_layers])
 
+        for param in self.parameters():
+            param.requires_grad = False
+
     def forward(self, x, all_features: bool = False):
         """Forward pass through the encoder model.
 

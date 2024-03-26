@@ -24,9 +24,6 @@ class TransferModel(nn.Module):
 
         if pretrained_weights: self.load_state_dict(torch.load(pretrained_weights))
 
-        for param in self.encoder.parameters():
-            param.requires_grad = False
-
         self.n_clusters = n_clusters
         self.alpha = alpha
         self.gamma = gamma
@@ -48,7 +45,7 @@ class TransferModel(nn.Module):
         content_loss = self.content_loss(content_features, transfered_content_features)
         style_loss = self.style_loss(all_style_features, all_transfered_style_features)
 
-        loss = content_loss + self.alpha * style_loss
+        loss = content_loss + self.gamma * style_loss
 
         if output_image:
             return loss, (content_loss, style_loss), transfered_images
