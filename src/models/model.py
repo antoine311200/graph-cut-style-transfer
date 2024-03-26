@@ -14,26 +14,28 @@ class TransferModel(nn.Module):
         self,
         base_model = None,
         pretrained_weights = None,
-        blocks: list[int] = [0, 3, 10, 17, 30],#[0, 2, 7, 12, 31],
+        blocks: list[int] = [0, 4, 11, 18, 31],
+
         n_clusters: int = 3,
         alpha: float = 0.6,
         lambd: float = 0.1,
         gamma: float = 0.01,
-        device="cpu",
+
         mode="pretrain"
     ):
+
         super(TransferModel, self).__init__()
-        self.encoder = Encoder(base_model, blocks=blocks, device=device)
-        self.decoder = Decoder(self.encoder.model, stop_layer=blocks[-1], device=device)
+        self.encoder = Encoder(base_model, blocks=blocks)
+        self.decoder = Decoder(self.encoder)
 
         if pretrained_weights:
             state_dict = torch.load(pretrained_weights)
-            state_dict["encoder.preprocess.0.weight"] = torch.tensor([
-                [[[  0.]], [[  0.]], [[255.]]],
-                [[[  0.]], [[255.]], [[  0.]]],
-                [[[255.]], [[  0.]], [[  0.]]]
-            ])
-            state_dict["encoder.preprocess.0.bias"] = torch.tensor([-103.9390, -116.7790, -123.6800])
+            # state_dict["encoder.preprocess.0.weight"] = torch.tensor([
+            #     [[[  0.]], [[  0.]], [[255.]]],
+            #     [[[  0.]], [[255.]], [[  0.]]],
+            #     [[[255.]], [[  0.]], [[  0.]]]
+            # ])
+            # state_dict["encoder.preprocess.0.bias"] = torch.tensor([-103.9390, -116.7790, -123.6800])
             self.load_state_dict(state_dict)
 
         self.n_clusters = n_clusters
@@ -43,21 +45,7 @@ class TransferModel(nn.Module):
 
         self.content_loss = ContentLoss()
         self.style_loss = StyleLoss()
-
-        # # Set all parameters to require grad
-        for param in self.parameters():
-            param.requires_grad = True
-
-        # if mode == "pretrain":
-        #     for param in self.encoder.parameters():
-        #         param.requires_grad = False
-
-        # # Set the preprocess layer to not require grad
-        self.encoder.preprocess.requires_grad = False
-
         self.mode = mode
-
-        self.device = device
 
     def forward(self, content_images, style_images, output_image=False):
 
