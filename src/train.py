@@ -24,11 +24,13 @@ def train_step(
     batch_size = dataloader.batch_size
     losses = []
 
+    device = next(model.parameters()).device
+
     progress_bar = tqdm(dataloader, desc="Training", leave=False)
 
     for i, (content_images, style_images) in enumerate(progress_bar):
-        content_images = content_images.to(model.device)
-        style_images = style_images.to(model.device)
+        content_images = content_images.to(device)
+        style_images = style_images.to(device)
 
         loss = model(content_images, style_images)
         optimizer.zero_grad()
@@ -43,8 +45,8 @@ def train_step(
 
         if i % snapshot_interval == 0:
             snapshot_content, snapshot_style = next(snapshot_dataloader)
-            snapshot_content = snapshot_content.to(model.device)
-            snapshot_style = snapshot_style.to(model.device)
+            snapshot_content = snapshot_content.to(device)
+            snapshot_style = snapshot_style.to(device)
 
             with torch.no_grad():
                 snapshot_batch = model(
@@ -88,9 +90,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
-        device=device,
         mode="style_transfer"#"full_pretrain"#
-    )
+    ).to(device)
     optimizer = Adam(model.parameters(), lr=lr)
     scheduler = CosineAnnealingLR(optimizer, num_iterations)#None# 
 
