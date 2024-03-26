@@ -66,7 +66,7 @@ def train_step(
 def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batch_size=8):
 
     content_dir = "./data/coco"
-    style_dir = r"E:\Antoine\data\wikiart\wikiart"  # "./data/wikiart"
+    style_dir = "./data/wikiart"
 
     max_images = 4000#4000
 
