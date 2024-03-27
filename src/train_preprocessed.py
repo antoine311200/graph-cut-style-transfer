@@ -13,7 +13,7 @@ from src.dataset import PreprocessedDataset
 import os
 import logging
 
-def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
+def test_step(model, test_dl, device, epoch, snapshot_interval=100, logger=None):
     if logger is None:
         logger = logging.getLogger("Training")
 
@@ -32,7 +32,7 @@ def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
             if k % snapshot_interval == 0:           
                 loss, info, images = model(content_features, all_style_features, transfered_features, output_image=True)
                 snapshot_images = images
-                save_image(snapshot_images, f"./data/snapshots/snapshot_{k}.png", nrow=batch_size, ncols=3)
+                save_image(snapshot_images, f"./data/snapshots/snapshot_{epoch}_{k}.png", nrow=batch_size, ncols=3)
             else:
                 loss, info = model(content_features, all_style_features, transfered_features)
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         "batch_size": 64,
         "gamma": 0.01,
         "epochs": 15,
-        "lr": 1e-4,
+        "lr": 2e-7,
     }
 
     logger = logging.getLogger("Training")
