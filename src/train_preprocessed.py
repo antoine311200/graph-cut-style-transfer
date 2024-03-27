@@ -93,8 +93,8 @@ def train(gamma=0.1, epochs=1, lr=1e-4, batch_size=8, logger=None):
     logger.info(f"Train dataset size: {len(train_dataset)}")
     logger.info(f"Test dataset size: {len(test_dataset)}")
 
-    train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)
-    test_dl = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=0)
+    train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    test_dl = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
     model = PreprocessedModel(gamma=gamma).to(device)
 
