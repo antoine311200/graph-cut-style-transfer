@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import scipy as sp
 
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
@@ -23,7 +24,9 @@ def cluster_style(style_features, k=3):
         np.array: Cluster centers
         list: List of clusters
     """
-    style_features_view = style_features.reshape(style_features.shape[0], -1).T  # (height * width, channel)
+    style_features_view = style_features.reshape(
+        style_features.shape[0], -1
+    ).T  # (height * width, channel)
     kmeans = KMeans(n_clusters=k).fit(style_features_view)
 
     cluster_centers = kmeans.cluster_centers_  # (k, channel)
@@ -122,19 +125,25 @@ def feature_WCT(content_features, style_features, label, alpha):
     content_mask = content_features * label  # (channel, height, width)
     content_mean = np.mean(content_mask, axis=(1, 2), keepdims=True) * label
     content_features = content_features - content_mean
-    content_covariance = np.einsum("ijk,ljk->il", content_features, content_features) / (sum(label.flatten()) / channels - 1)
+    content_covariance = np.einsum(
+        "ijk,ljk->il", content_features, content_features
+    ) / (sum(label.flatten()) / channels - 1)
 
     # Compute the mean of the style features
     # Multiply each channel by the label to put to zero the non-content features
     style_features = style_features.T  # (height * width, cluster size)
     style_mean = np.mean(style_features, axis=(1,), keepdims=True)
     style_features = style_features - style_mean
-    style_covariance = np.einsum("ij,lj->il", style_features, style_features) / (cluster_size - 1)
+    style_covariance = np.einsum("ij,lj->il", style_features, style_features) / (
+        cluster_size - 1
+    )
 
     # It can happen that the SVD fails to converge, in this case we return the content features
     try:
-        _, content_S, content_V = np.linalg.svd(content_covariance)
-        _, style_S, style_V = np.linalg.svd(style_covariance)
+        #_, content_S, content_V = np.linalg.svd(content_covariance)
+        #_, style_S, style_V = np.linalg.svd(style_covariance)
+        _, content_S, content_V = sp.linalg.svd(content_covariance)
+        _, style_S, style_V = sp.linalg.svd(style_covariance)
         content_D = np.diag(np.power(content_S, -0.5))
         style_D = np.diag(np.power(style_S, 0.5))
 
@@ -145,7 +154,9 @@ def feature_WCT(content_features, style_features, label, alpha):
         style_mean = style_mean[:, np.newaxis]
         style_mean = style_mean * label
 
-        result = (coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)).reshape(content_features.shape) + style_mean
+        result = (
+            coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)
+        ).reshape(content_features.shape) + style_mean
         result = result * alpha + content_mask * (1 - alpha)
     except np.linalg.LinAlgError:
         print("SVD failed to converge")
@@ -181,6 +192,3 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
 
     transfered_features = torch.from_numpy(transfered_features).float()
     return transfered_features
-
-
-
