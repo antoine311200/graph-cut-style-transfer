@@ -60,8 +60,8 @@ class PreprocessedDataset(Dataset):
         return self.size_per_epoch
     
     def __getitem__(self, idx):
-        data = torch.load(os.path.join(self.directory, f"diversity_{self.current_diversity}", f"transfered_{idx}.pt"))
-        return data["content_features"], data["all_style_features"], data["transfered_features"]
+        data = torch.load(os.path.join(self.directory, f"diversity_{self.current_diversity}", f"transfered_{idx}.pt"), map_location="cpu")
+        return data["content_features"].squeeze(0), data["all_style_features"].squeeze(0), data["transfered_features"].squeeze(0)
     
     def next_diversity(self):
         self.current_diversity = (self.current_diversity + 1) % self.diversity
