@@ -10,16 +10,6 @@ from src.models.decoder import Decoder
 from src.energy import style_transfer
 from src.loss import ContentLoss, StyleLoss
 
-class ToImage(nn.Module):
-    """Normalize a tensor image with mean and standard deviation."""
-
-    def __init__(self):
-        super(ToImage, self).__init__()
-
-    def forward(self, tensor):
-        img = torch.clamp(tensor, 0, 1) * 255
-        return img.type(torch.uint8)
-
 class TransferModel(nn.Module):
     def __init__(
         self,
@@ -38,7 +28,6 @@ class TransferModel(nn.Module):
         super(TransferModel, self).__init__()
         self.encoder = Encoder(base_model, blocks=blocks)
         self.decoder = Decoder(self.encoder)
-        self.to_image = ToImage()
 
         if pretrained_weights:
             state_dict = torch.load(pretrained_weights)
@@ -82,7 +71,7 @@ class TransferModel(nn.Module):
             raise ValueError("Invalid mode")
 
         if output_image:
-            return loss, info, self.to_image(decoded_images)
+            return loss, info, decoded_images
         return loss, info
 
     def transfer(self, content_features, style_features):
@@ -104,7 +93,6 @@ class PreprocessedModel(nn.Module):
         super(PreprocessedModel, self).__init__()
         self.encoder = Encoder()
         self.decoder = Decoder(self.encoder)
-        self.to_image = ToImage()
 
         self.gamma = gamma
 
@@ -124,5 +112,5 @@ class PreprocessedModel(nn.Module):
         info = {"content_loss": content_loss, "style_loss": style_loss}
 
         if output_image:
-            return loss, info, self.to_image(decoded_images)
+            return loss, info, decoded_images
         return loss, info
