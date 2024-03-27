@@ -125,7 +125,7 @@ def train(gamma=0.1, epochs=1, lr=1e-4, batch_size=8, logger=None):
 if __name__ == "__main__":
 
     params = {
-        "batch_size": 8,
+        "batch_size": 512,
         "gamma": 0.01,
         "epochs": 15,
         "lr": 1e-4,
