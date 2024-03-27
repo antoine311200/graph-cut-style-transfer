@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 
 from maxflow.fastmin import aexpansion_grid
-
+import graph_cut as gc
 
 def cluster_style(style_features, k=3):
     """Cluster the style features using k-means.
@@ -34,7 +34,7 @@ def cluster_style(style_features, k=3):
     return cluster_centers, cluster_list
 
 
-def data_energy(content_features, cluster_centers):
+def data_energy(content_features, cluster_centers,distance="cosine"):
     """Compute the data energy defined as 1 - cosine similarity between the content features and the cluster centers.
 
     Minimizing this energy term encourages the labeling operated with the KMeans to be consistent with the content features.
@@ -49,14 +49,17 @@ def data_energy(content_features, cluster_centers):
     content_shape = content_features.shape # (channel, height, width)
     content_features = content_features.reshape(content_shape[0], -1).T # (height * width, channel)
 
-    # Compute the cosine similarity between the content features and the cluster centers
-    # Shapes: content_features (height * width, channel), cluster_centers (k, channel)
-    # Result: similarity (height * width, k)
-    similarity = cosine_similarity(content_features, cluster_centers)
-    similarity = similarity.reshape(content_shape[1], content_shape[2], -1)
+    if distance=="cosine":
+        # Compute the cosine similarity between the content features and the cluster centers
+        # Shapes: content_features (height * width, channel), cluster_centers (k, channel)
+        # Result: similarity (height * width, k)
+        similarity = cosine_similarity(content_features, cluster_centers)
+        similarity = similarity.reshape(content_shape[1], content_shape[2], -1)
+        distances = 1 - similarity
+    else:
+        distances = np.linalg.norm(content_features - cluster_centers, axis=0)
 
-    # Compute the data energy with shape (height, width, k)
-    return 1 - similarity
+    return distances
 
 
 def smooth_energy(cluster_centers, lambd):
@@ -77,7 +80,7 @@ def smooth_energy(cluster_centers, lambd):
     return lambd * (1 - np.eye(k))
 
 
-def total_energy(content_features, style_features, k=2, lambd=0.1):
+def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="pymax", distance="cosine"):
     """Compute the total energy of the graph cut algorithm.
 
     The total energy is the sum of the data energy and the smooth energy.
@@ -93,13 +96,19 @@ def total_energy(content_features, style_features, k=2, lambd=0.1):
     """
     cluster_centers, cluster_list = cluster_style(style_features, k=k)
 
-    data_term = data_energy(content_features, cluster_centers)  # (height, width, k)
-    smooth_term = smooth_energy(cluster_centers, lambd)  # (k, k)
+    data_term = data_energy(content_features, cluster_centers, distance=distance)  # (height, width, k)
 
-    data_term = data_term.astype(np.double)
-    smooth_term = smooth_term.astype(np.double)
+    if expansion == "pymax":
+        smooth_term = smooth_energy(cluster_centers, lambd)  # (k, k)
 
-    labels = aexpansion_grid(data_term, smooth_term, max_cycles=None) # (height, width)
+        data_term = data_term.astype(np.double)
+        smooth_term = smooth_term.astype(np.double)
+
+        labels = aexpansion_grid(data_term, smooth_term, max_cycles=None) # (height, width)
+
+    else:
+        greedy_assignments = np.argmin(data_term,axis=2)
+        labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=5, beta=lambd)
 
     return labels, cluster_list
 
@@ -164,7 +173,7 @@ def feature_WCT(content_features, style_features, label, alpha):
 
     return result
 
-def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
+def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, distance="cosine", expansion="pymax"):
     """Perform the style transfer using the graph cut algorithm.
 
     Args:
@@ -177,7 +186,8 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
     Returns:
         np.array: Transfered features
     """
-    labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd)
+    # Shape of content_features and style_features: (channel, height, width)
+    labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd, expansion=expansion, distance=distance)
 
     # print(labels.shape, [cluster.shape[0] for cluster in cluster_list])
 
