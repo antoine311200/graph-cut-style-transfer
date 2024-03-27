@@ -31,6 +31,6 @@ class StyleLoss(nn.Module):
             style_mean = style_features.mean(dim=[2, 3], keepdim=True)
             style_std = style_features.std(dim=[2, 3], keepdim=True)
 
-            layer_loss = nn.functional.mse_loss(content_mean, style_mean, reduce="mean") + nn.functional.mse_loss(content_std, style_std, reduction="mean")
+            layer_loss = nn.functional.mse_loss(content_mean, style_mean, reduction="mean") + nn.functional.mse_loss(content_std, style_std, reduction="mean")
             self.loss += layer_loss
         return self.loss

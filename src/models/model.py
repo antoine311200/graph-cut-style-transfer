@@ -117,17 +117,6 @@ class PreprocessedModel(nn.Module):
         transfered_content_features = self.encoder(decoded_images)
         all_transfered_style_features = self.encoder(decoded_images, all_features=True)
 
-
-        logger = logging.getLogger("Training")
-
-        logger.info(f"content_features: {content_features.shape}")
-        logger.info(f"all_style_features: {[style_features.shape for style_features in all_style_features]}")
-        logger.info(f"transfered_features: {transfered_features.shape}")
-
-        logger.info(f"transfered_content_features: {transfered_content_features.shape}")
-        logger.info(f"all_transfered_style_features: {[style_features.shape for style_features in all_transfered_style_features]}")
-
-
         content_loss = self.content_loss(content_features, transfered_content_features)
         style_loss = self.style_loss(all_style_features, all_transfered_style_features)
 

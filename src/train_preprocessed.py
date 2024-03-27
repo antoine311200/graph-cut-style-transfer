@@ -64,8 +64,6 @@ def train_step(model, train_dl, optimizer, device, logger=None):
         loss.backward()
         optimizer.step()
 
-        break
-
         losses.append(loss.item())
         for key, value in info.items():
             infos[key].append(value.item())
@@ -112,7 +110,6 @@ def train(gamma=0.1, epochs=1, lr=1e-4, batch_size=8, logger=None):
 
     for epoch in range(epochs):
         train_loss = train_step(model, train_dl, optimizer, device, logger)
-        break
         test_loss = test_step(model, test_dl, device, snapshot_interval=100, logger=logger)
         scheduler.step()
         logger.info(f"="*50)
