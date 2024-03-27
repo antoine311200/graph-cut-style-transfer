@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 
+import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -43,3 +44,24 @@ class ContentStyleDataset(Dataset):
             style_image = self.transform(style_image)
 
         return content_image, style_image
+    
+class PreprocessedDataset(Dataset):
+    def __init__(self, directory, diversity):
+        super().__init__()
+
+        self.directory = directory
+        self.diversity = diversity
+
+        self.diversity_content = [os.listdir(os.path.join(directory, f"diversity_{k}")) for k in range(diversity)]
+        self.size_per_epoch = len(self.diversity_content[0])
+        self.current_diversity = 0
+
+    def __len__(self):
+        return self.size_per_epoch
+    
+    def __getitem__(self, idx):
+        data = torch.load(os.path.join(self.directory, f"diversity_{self.current_diversity}", f"transfered_{idx}.pt"))
+        return data["content_features"], data["all_style_features"], data["transfered_features"]
+    
+    def next_diversity(self):
+        self.current_diversity = (self.current_diversity + 1) % self.diversity

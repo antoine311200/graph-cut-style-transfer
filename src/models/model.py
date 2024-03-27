@@ -98,3 +98,31 @@ class TransferModel(nn.Module):
                 self.lambd,
             )
         return transfered_features
+
+class PreprocessedModel(nn.Module):
+    def __init__(self, gamma=0.01):
+        super(PreprocessedModel, self).__init__()
+        self.encoder = Encoder()
+        self.decoder = Decoder(self.encoder)
+        self.to_image = ToImage()
+
+        self.gamma = gamma
+
+        self.content_loss = ContentLoss()
+        self.style_loss = StyleLoss()
+
+    def forward(self, content_features, all_style_features, transfered_features, output_image=False):
+        decoded_images = self.decoder(transfered_features)
+
+        transfered_content_features = self.encoder(decoded_images)
+        all_transfered_style_features = self.encoder(decoded_images, all_features=True)
+
+        content_loss = self.content_loss(content_features, transfered_content_features)
+        style_loss = self.style_loss(all_style_features, all_transfered_style_features)
+
+        loss = content_loss + self.gamma * style_loss
+        info = {"content_loss": content_loss, "style_loss": style_loss}
+
+        if output_image:
+            return loss, info, self.to_image(decoded_images)
+        return loss, info
