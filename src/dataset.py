@@ -61,7 +61,12 @@ class PreprocessedDataset(Dataset):
     
     def __getitem__(self, idx):
         data = torch.load(os.path.join(self.directory, f"diversity_{self.current_diversity}", f"transfered_{idx}.pt"), map_location="cpu")
-        return data["content_features"].squeeze(0), data["all_style_features"].squeeze(0), data["transfered_features"].squeeze(0)
+
+        content_features = data["content_features"].squeeze(0)
+        all_style_features = [style_features.squeeze(0) for style_features in data["all_style_features"]]
+        transfered_features = data["transfered_features"].squeeze(0)
+
+        return content_features, all_style_features, transfered_features
     
     def next_diversity(self):
         self.current_diversity = (self.current_diversity + 1) % self.diversity
