@@ -174,6 +174,7 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1):
     Returns:
         np.array: Transfered features
     """
+    # Shape of content_features and style_features: (channel, height, width)
     labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd)
 
     # print(labels.shape, [cluster.shape[0] for cluster in cluster_list])
