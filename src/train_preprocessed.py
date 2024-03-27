@@ -31,7 +31,7 @@ def test_step(model, test_dl, device, snapshot_interval=100, logger=None):
 
             if k % snapshot_interval == 0:           
                 loss, info, images = model(content_features, all_style_features, transfered_features, output_image=True)
-                snapshot_images = torch.cat([content_features, all_style_features[0], images], dim=0)
+                snapshot_images = images
                 save_image(snapshot_images, f"./data/snapshots/snapshot_{k}.png", nrow=batch_size, ncols=3)
             else:
                 loss, info = model(content_features, all_style_features, transfered_features)
