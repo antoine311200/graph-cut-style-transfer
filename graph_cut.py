@@ -73,7 +73,7 @@ def alpha_expansion(distances, assignments_, max_cycles=10, beta=1, tolerance=1)
     convergence_lag = 0
     while not converged and cycles < max_cycles:
         clusters_list = list(range(K)) #shuffle the order of the clusters
-        random.shuffle(clusters_list)
+        #random.shuffle(clusters_list)
         
         if convergence_lag==5:
             converged = True
@@ -113,7 +113,7 @@ def alpha_expansion_graph(distances, assignments, alpha, beta):
     for i in range(height):
         for j in range(width):
             if assignments[i,j]==alpha:
-                sink_capacity = np.inf
+                sink_capacity = 0#np.inf
             else:
                 sink_capacity = distances[i,j,assignments[i,j]]
             source_capacity = distances[i,j,alpha]
@@ -134,7 +134,7 @@ def alpha_expansion_graph(distances, assignments, alpha, beta):
                         if new_node not in G.nodes():
                             G.add_edge(new_node, sink, capacity = beta)
                         G.add_edge((i,j), new_node, capacity = beta)
-                        G.add_edge(new_node, (i, j), capacity = np.inf)
+                        G.add_edge(new_node, (i, j), capacity = 0)#np.inf)
 
     return G
 
