@@ -1,50 +1,60 @@
 
 import networkx as nx
-#import igraph as ig
+import igraph as ig
 
 import numpy as np
 import random
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
 
 
-def get_grid_neighbors(i,j,h,w,total=False):
+def get_grid_neighbors(i,j,h,w):
     """returns neighbors of pixel (i,j)"""
-    if total:
-        neighbors = [(i-1, j), (i+1, j), (i-1, j-1), (i, j-1),(i+1, j-1), (i-1, j+1), (i, j+1), (i+1, j+1)]
-    else:
-        neighbors = [(i-1, j), (i+1, j), (i, j-1),(i, j+1)]
+    neighbors = [(i-1, j), (i+1, j), (i-1, j-1), (i, j-1),(i+1, j-1), (i-1, j+1), (i, j+1), (i+1, j+1)]
     for i, pixel in enumerate(neighbors):
         if pixel[0] < 0 or pixel[1] < 0 or pixel[0] >= h or pixel[1] >= w:
             neighbors[i] = None
     return [node for node in neighbors if node is not None]
 
 
-def plot_energy(energies, total_energies, fail_counts=None):
+def plot_energy(energies, fail_counts=None):
     """plots total energy during iterations"""
 
-    if fail_counts:
-        fig, ax = plt.subplots(1,3,figsize = (12,3))
+    if fail_counts is not None:
+        fig, ax = plt.subplots(1,2,figsize = (12,3))
+
+        ax[0].plot(range(len(energies)),energies, marker="x")
+        ax[0].set_xlabel("Iterations")
+        ax[0].set_ylabel("Total energy")
+
+        ax[1].scatter(range(len(fail_counts)),fail_counts, marker="x")
+        ax[1].set_xlabel("Iterations")
+        ax[1].set_ylabel("Changes before reduction")
+
+        fig.suptitle("Iterations of alpha expansion")
+        fig.tight_layout()
+        plt.show();
+
     else:
-        fig, ax = plt.subplots(1,2,figsize = (8,3))
+        plt.figure(figsize = (4,3))
+        plt.plot(range(len(energies)),energies, marker="x")
+        plt.xlabel("Iterations")
+        plt.ylabel("Total energy")
+        plt.show();
 
-    ax[0].plot(range(len(total_energies)),total_energies, marker="x")
-    ax[0].set_xlabel("Iterations")
-    ax[0].set_ylabel("Total energy")
+def plot_images(target, initial, assigned):
+    """shows both images"""
 
-    ax[1].plot(range(len(energies)),energies, marker="x")
-    ax[1].set_xlabel("Iterations")
-    ax[1].set_ylabel("Energy reduction")
-
-    if fail_counts:
-        ax[2].scatter(range(len(fail_counts)),fail_counts, marker="x")
-        ax[2].set_xlabel("Iterations")
-        ax[2].set_ylabel("Changes before reduction")
-
-    fig.suptitle("Iterations of alpha expansion")
-    fig.tight_layout()
+    fig, ax = plt.subplots(1,3,figsize=(15,5))
+    ax[0].imshow(target)
+    ax[0].axis('off')
+    ax[1].imshow(initial)
+    ax[1].axis('off')
+    ax[2].imshow(assigned)
+    ax[2].axis('off')
+    
     plt.show();
 
 
@@ -56,7 +66,7 @@ def alpha_expansion(distances, assignments_, max_cycles=10, beta=1, tolerance=1)
     total_energies = []
     
     converged = False
-    energy_before = float("inf")
+    energy_before = np.inf
     cycles = 0
     pbar = tqdm(total=max_cycles*K)
     
@@ -102,14 +112,13 @@ def alpha_expansion_graph(distances, assignments, alpha, beta):
     #edges between alpha and comp alpha
     for i in range(height):
         for j in range(width):
-            source_capacity = distances[i,j,alpha]
-            G.add_edge(source, (i, j), capacity=source_capacity)
             if assignments[i,j]==alpha:
-                G.add_edge((i, j), sink) #infinite capacity
+                sink_capacity = 0#np.inf
             else:
                 sink_capacity = distances[i,j,assignments[i,j]]
-                G.add_edge(source, (i, j), capacity=source_capacity)
-                G.add_edge((i, j), sink, capacity=sink_capacity)
+            source_capacity = distances[i,j,alpha]
+            G.add_edge(source, (i, j), capacity=source_capacity)
+            G.add_edge((i, j), sink, capacity=sink_capacity)
             
     #edges between pixels
     for i in range(height):
@@ -125,7 +134,7 @@ def alpha_expansion_graph(distances, assignments, alpha, beta):
                         if new_node not in G.nodes():
                             G.add_edge(new_node, sink, capacity = beta)
                         G.add_edge((i,j), new_node, capacity = beta)
-                        G.add_edge(new_node, (i, j))#, capacity = float("inf"))
+                        G.add_edge(new_node, (i, j), capacity = 0)#np.inf)
 
     return G
 
@@ -139,13 +148,13 @@ def find_optimal_assignment(distances, assignments_, alpha, beta):
     # min-cut
     G = alpha_expansion_graph(distances, assignments, alpha, beta)
     cut_value, partition = nx.minimum_cut(G, f"comp_cluster_{alpha}", f"cluster_{alpha}")
-    _, reachable = partition
+    reachable, _ = partition
     
     # update assignments
     for i in range(height):
         for j in range(width):
-            if (i,j) in reachable:
-                assignments[i,j] = alpha
+            if (i, j) in reachable:
+                assignments[(i, j)] = alpha
                 
     min_cut_energy = compute_energy(distances, assignments, beta)
     
@@ -160,13 +169,13 @@ def compute_energy(distances, assignments, beta):
     for i in range(height):
         for j in range(width):
             k = assignments[(i, j)]
-            energy += distances[i, j, k]
             for neighbor in get_grid_neighbors(i,j,height,width):
-                edge_key = tuple(sorted([(i, j), neighbor]))
-                if edge_key not in added_edges:
-                    added_edges.add(edge_key)
-                    if  assignments[neighbor[0],neighbor[1]] != k:
+                if assignments[(i, j)] != assignments[neighbor]:
+                    edge_key = tuple(sorted([(i, j), neighbor]))
+                    if edge_key not in added_edges:
                         energy += beta
+                        added_edges.add(edge_key)
+            energy += distances[i, j, k]
     return energy
 
 
@@ -331,6 +340,9 @@ def change_graph(G_, i, j, distances, assignments, new_k, beta):
 
 
 
+
+
+
 def alpha_expansion_stochastic(distances, assignments_, max_iter=1000, beta=1):
     """imitates alpha expansion energy reduction with random change in pixels"""
     assignments = assignments_.copy()
@@ -387,7 +399,7 @@ def alpha_expansion_greedy(distances, assignments_, max_iter=1000, beta=1):
 
         new_energies = []
         for k in range(K):
-            if k != current_k:
+            if k!= current_k:
                 new_assignments = assignments.copy()
                 new_assignments[i,j] = k
                 new_energies.append(compute_energy(distances, new_assignments, beta))

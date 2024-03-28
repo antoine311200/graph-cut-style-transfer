@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 
 from maxflow.fastmin import aexpansion_grid
-import graph_cut as gc
+import src.graph_cut as gc
 
 def cluster_style(style_features, k=3):
     """Cluster the style features using k-means.
