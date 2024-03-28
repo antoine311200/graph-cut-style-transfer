@@ -4,7 +4,7 @@ import igraph as ig
 
 import numpy as np
 import random
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
