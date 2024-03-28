@@ -24,13 +24,15 @@ def train_step(
     batch_size = dataloader.batch_size
     losses = []
 
+    device = next(model.parameters()).device
+
     progress_bar = tqdm(dataloader, desc="Training", leave=False)
 
     for i, (content_images, style_images) in enumerate(progress_bar):
-        content_images = content_images.to(model.device)
-        style_images = style_images.to(model.device)
+        content_images = content_images.to(device)
+        style_images = style_images.to(device)
 
-        loss = model(content_images, style_images)
+        loss, info = model(content_images, style_images)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -43,11 +45,11 @@ def train_step(
 
         if i % snapshot_interval == 0:
             snapshot_content, snapshot_style = next(snapshot_dataloader)
-            snapshot_content = snapshot_content.to(model.device)
-            snapshot_style = snapshot_style.to(model.device)
+            snapshot_content = snapshot_content.to(device)
+            snapshot_style = snapshot_style.to(device)
 
             with torch.no_grad():
-                snapshot_batch = model(
+                loss, snapshot_batch, info = model(
                     snapshot_content, snapshot_style, output_image=True
                 )
 
@@ -78,7 +80,7 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
     snapshot_dataloader = DataLoader(snapshot_dataset, batch_size=batch_size, shuffle=True)
 
     num_iterations = len(dataloader) // batch_size * epochs
-    pretrained_weights = "base_model.pt"#"pretrain_21_03.pt"#None#"pretrained_weights.pt"#None#"model_399.pt" #
+    pretrained_weights = None #"perceptual_model_149.pt"#"new_base_model.pt"#"base_model.pt"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = TransferModel(
@@ -88,9 +90,8 @@ def train(n_clusters=3, alpha=0.1, lambd=0.1, gamma=0.1, epochs=1, lr=1e-4, batc
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
-        device=device,
-        mode="style_transfer"#"full_pretrain"#
-    )
+        mode="full_pretrain"#"style_transfer"#"full_pretrain"#
+    ).to(device)
     optimizer = Adam(model.parameters(), lr=lr)
     scheduler = CosineAnnealingLR(optimizer, num_iterations)#None# 
 
@@ -124,7 +125,7 @@ if __name__ == "__main__":
         "lambd": 0.01,
         "gamma": 0.05,
         "epochs": 25,
-        "lr": 2e-7,
+        "lr": 3e-7, # 2e-7
     }
 
     train(

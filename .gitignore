@@ -89,6 +89,10 @@ data/val2017/
 *.pt
 *.pth
 
+# Except the pt files in the models folder
+!models/*.pt
+!models/*.pth
+
 *.png
 
 # pyenv
