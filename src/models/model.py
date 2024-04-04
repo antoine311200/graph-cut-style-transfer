@@ -21,6 +21,7 @@ class TransferModel(nn.Module):
         lambd: float = 0.1,
         gamma: float = 0.01,
 
+        algo: str = "pymax",
         mode="pretrain"
     ):
 
@@ -40,6 +41,7 @@ class TransferModel(nn.Module):
         self.content_loss = ContentLoss()
         self.style_loss = StyleLoss()
         self.mode = mode
+        self.algo = "pymax"
 
     def forward(self, content_images, style_images, output_image=False):
         if self.mode == "pretrain":
@@ -98,5 +100,6 @@ class TransferModel(nn.Module):
                 self.alpha,
                 self.n_clusters,
                 self.lambd,
+                expansion=self.algo,
             )
         return transfered_features

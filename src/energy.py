@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 
 from maxflow.fastmin import aexpansion_grid
-import graph_cut as gc
+import src.graph_cut as gc
 
 def cluster_style(style_features, k=3):
     """Cluster the style features using k-means.
@@ -27,11 +27,11 @@ def cluster_style(style_features, k=3):
     style_features_view = style_features.reshape(
         style_features.shape[0], -1
     ).T  # (height * width, channel)
-    kmeans = KMeans(n_clusters=k).fit(style_features_view)
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(style_features_view)
 
     cluster_centers = kmeans.cluster_centers_  # (k, channel)
     cluster_list = [style_features_view[kmeans.labels_ == i] for i in range(k)]
-    return cluster_centers, cluster_list
+    return cluster_centers, cluster_list, kmeans.labels_
 
 
 def data_energy(content_features, cluster_centers,distance="cosine"):
@@ -65,7 +65,7 @@ def data_energy(content_features, cluster_centers,distance="cosine"):
 def smooth_energy(cluster_centers, lambd):
     """Compute the smooth energy defined as lambd * (1 - I) where I is the identity matrix.
 
-    As the spatial content information is not taken into account in the clustering,
+    As the spatial content information is not taken into acontent_channelount in the clustering,
     failing to preserve discontinuity and producing unplesing structures, we add a smooth energy term
     to help pixels in the same content local region to have the same label.
 
@@ -94,7 +94,7 @@ def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="py
     Returns:
         np.array: Total energy
     """
-    cluster_centers, cluster_list = cluster_style(style_features, k=k)
+    cluster_centers, cluster_list, cluster_labels = cluster_style(style_features, k=k)
 
     data_term = data_energy(content_features, cluster_centers, distance=distance)  # (height, width, k)
 
@@ -105,15 +105,14 @@ def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="py
         smooth_term = smooth_term.astype(np.double)
 
         labels = aexpansion_grid(data_term, smooth_term, max_cycles=None) # (height, width)
-
     else:
         greedy_assignments = np.argmin(data_term,axis=2)
-        labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=5, beta=lambd)
+        labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=30, beta=lambd)
 
-    return labels, cluster_list
+    return labels, cluster_list, cluster_labels
 
 
-def feature_WCT(content_features, style_features, label, alpha):
+def feature_WCT(content, style, epsilon=1e-8, alpha=1):
     """Compute the whitening and coloring transform for the content features based on the paper
     "Universal Style Transfer via Feature Transforms" by Li et al."
 
@@ -126,52 +125,36 @@ def feature_WCT(content_features, style_features, label, alpha):
     Returns:
         np.array: Transformed content features
     """
-    channels = content_features.shape[0]
-    cluster_size = style_features.shape[0]
+    content_channel, content_length = content.shape
+    style_channel, style_length = style.shape
 
-    # Compute the mean of the content features
-    # Multiply each channel by the label to put to zero the non-content features
-    content_mask = content_features * label  # (channel, height, width)
-    content_mean = np.mean(content_mask, axis=(1, 2), keepdims=True) * label
-    content_features = content_features - content_mean
-    content_covariance = np.einsum(
-        "ijk,ljk->il", content_features, content_features
-    ) / (sum(label.flatten()) / channels - 1)
+    content_mean = np.mean(content, axis=1, keepdims=True)
+    content = content - content_mean
+    content_covariance = np.matmul(content, content.T) / (content_length - 1) + np.eye(content_channel) * epsilon
 
-    # Compute the mean of the style features
-    # Multiply each channel by the label to put to zero the non-content features
-    style_features = style_features.T  # (height * width, cluster size)
-    style_mean = np.mean(style_features, axis=(1,), keepdims=True)
-    style_features = style_features - style_mean
-    style_covariance = np.einsum("ij,lj->il", style_features, style_features) / (
-        cluster_size - 1
-    )
+    style_mean = np.mean(style, axis=1, keepdims=True)
+    style = style - style_mean
+    style_covariance = np.matmul(style, style.T) / (style_length - 1) + np.eye(style_channel) * epsilon
 
-    # It can happen that the SVD fails to converge, in this case we return the content features
-    try:
-        #_, content_S, content_V = np.linalg.svd(content_covariance)
-        #_, style_S, style_V = np.linalg.svd(style_covariance)
-        _, content_S, content_V = sp.linalg.svd(content_covariance)
-        _, style_S, style_V = sp.linalg.svd(style_covariance)
-        content_D = np.diag(np.power(content_S, -0.5))
-        style_D = np.diag(np.power(style_S, 0.5))
+    content_U, content_S, _ = np.linalg.svd(content_covariance)
+    style_U, style_S, _ = np.linalg.svd(style_covariance)
 
-        # Compute the whitening and coloring matrix
-        whitening_matrix = content_V @ content_D @ content_V.T
-        coloring_matrix = style_V @ style_D @ style_V.T
+    content_sum = np.sum(content_S > 1e-5)
+    style_sum = np.sum(style_S > 1e-5)
+    content_U = content_U[:, :content_sum]
+    style_U = style_U[:, :style_sum]
 
-        style_mean = style_mean[:, np.newaxis]
-        style_mean = style_mean * label
+    content_D = np.diag(np.power(content_S[:content_sum], -0.5))
+    style_D = np.diag(np.power(style_S[:style_sum], 0.5))
 
-        result = (
-            coloring_matrix @ whitening_matrix @ content_features.reshape(channels, -1)
-        ).reshape(content_features.shape) + style_mean
-        result = result * alpha + content_mask * (1 - alpha)
-    except np.linalg.LinAlgError:
-        print("SVD failed to converge")
-        result = content_features
+    whitening_matrix = content_U @ content_D @ content_U.T
+    coloring_matrix = style_U @ style_D @ style_U.T
 
+    result = coloring_matrix @ whitening_matrix @ content + style_mean
+
+    result = alpha * result + (1 - alpha) * (content + content_mean)
     return result
+
 
 def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, distance="cosine", expansion="pymax"):
     """Perform the style transfer using the graph cut algorithm.
@@ -187,18 +170,23 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, 
         np.array: Transfered features
     """
     # Shape of content_features and style_features: (channel, height, width)
-    labels, cluster_list = total_energy(content_features, style_features, k=k, lambd=lambd, expansion=expansion, distance=distance)
+    labels, cluster_list, cluster_labels = total_energy(content_features, style_features, k=k, lambd=lambd, expansion=expansion, distance=distance)
+    labels = labels.flatten()
 
-    # print(labels.shape, [cluster.shape[0] for cluster in cluster_list])
-
-    transfered_features = np.zeros(content_features.shape)
+    transfered_features = np.zeros(content_features.shape).reshape(content_features.shape[0], -1)
     for i in range(k):
-        label = (labels == i).astype(int) # (height, width)
-
         # Check if the cluster does not have only a single pixel (no need to transfer)
         if cluster_list[i].shape[0] == 1:
             continue
-        transfered_features += feature_WCT(content_features, cluster_list[i], label, alpha)
 
+        labels_idx = np.argwhere(labels == i).flatten()
+        subcontent_features = content_features.reshape(content_features.shape[0], -1)[:, labels_idx]
+
+        cluster_idx = np.argwhere(cluster_labels == i).flatten()
+        subcontent_style = style_features.reshape(style_features.shape[0], -1)[:, cluster_idx]
+
+        transfered_features[:, labels_idx] = feature_WCT(subcontent_features, subcontent_style, alpha=alpha)
+
+    transfered_features = transfered_features.reshape(content_features.shape)
     transfered_features = torch.from_numpy(transfered_features).float()
     return transfered_features

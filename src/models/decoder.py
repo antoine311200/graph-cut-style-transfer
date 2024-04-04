@@ -40,7 +40,6 @@ class Decoder(nn.Module):
 
         # Remove the equivalent of the preprocess layer
         self.reverse_model = self.reverse_model[:-3]
-        self.reverse_model.add_module("postprocess", nn.Conv2d(3, 3, 1))
 
     def forward(self, x):
         return self.reverse_model(x)
