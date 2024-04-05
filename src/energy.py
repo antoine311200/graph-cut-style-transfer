@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import scipy as sp
 
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
@@ -27,14 +26,14 @@ def cluster_style(style_features, k=3):
     style_features_view = style_features.reshape(
         style_features.shape[0], -1
     ).T  # (height * width, channel)
-    kmeans = KMeans(n_clusters=k, random_state=0).fit(style_features_view)
+    kmeans = KMeans(n_clusters=k, random_state=0, n_init="auto").fit(style_features_view)
 
     cluster_centers = kmeans.cluster_centers_  # (k, channel)
     cluster_list = [style_features_view[kmeans.labels_ == i] for i in range(k)]
     return cluster_centers, cluster_list, kmeans.labels_
 
 
-def data_energy(content_features, cluster_centers,distance="cosine"):
+def data_energy(content_features_, cluster_centers,distance="cosine"):
     """Compute the data energy defined as 1 - cosine similarity between the content features and the cluster centers.
 
     Minimizing this energy term encourages the labeling operated with the KMeans to be consistent with the content features.
@@ -46,8 +45,8 @@ def data_energy(content_features, cluster_centers,distance="cosine"):
     Returns:
         np.array: Data energy
     """
-    content_shape = content_features.shape # (channel, height, width)
-    content_features = content_features.reshape(content_shape[0], -1).T # (height * width, channel)
+    content_shape = content_features_.shape # (channel, height, width)
+    content_features = content_features_.reshape(content_shape[0], -1).T # (height * width, channel)
 
     if distance=="cosine":
         # Compute the cosine similarity between the content features and the cluster centers
@@ -56,8 +55,9 @@ def data_energy(content_features, cluster_centers,distance="cosine"):
         similarity = cosine_similarity(content_features, cluster_centers)
         similarity = similarity.reshape(content_shape[1], content_shape[2], -1)
         distances = 1 - similarity
-    else:
-        distances = np.linalg.norm(content_features - cluster_centers, axis=0)
+    else: #euclidean distance
+        distances = np.linalg.norm(np.array([content_features - cluster_centers[k] for k in range(cluster_centers.shape[0])]).T,axis=2)
+        distances = distances.reshape(content_shape[1], content_shape[2], -1)
 
     return distances
 
@@ -80,7 +80,7 @@ def smooth_energy(cluster_centers, lambd):
     return lambd * (1 - np.eye(k))
 
 
-def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="pymax", distance="cosine"):
+def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="pymax", distance="cosine", max_cycles=30):
     """Compute the total energy of the graph cut algorithm.
 
     The total energy is the sum of the data energy and the smooth energy.
@@ -107,7 +107,7 @@ def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="py
         labels = aexpansion_grid(data_term, smooth_term, max_cycles=None) # (height, width)
     else:
         greedy_assignments = np.argmin(data_term,axis=2)
-        labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=30, beta=lambd)
+        labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=max_cycles, lambd=lambd)
 
     return labels, cluster_list, cluster_labels
 
@@ -156,7 +156,7 @@ def feature_WCT(content, style, epsilon=1e-8, alpha=1):
     return result
 
 
-def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, distance="cosine", expansion="pymax"):
+def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, distance="cosine", expansion="pymax",max_cycles=30):
     """Perform the style transfer using the graph cut algorithm.
 
     Args:
@@ -170,7 +170,7 @@ def style_transfer(content_features, style_features, alpha=0.6, k=3, lambd=0.1, 
         np.array: Transfered features
     """
     # Shape of content_features and style_features: (channel, height, width)
-    labels, cluster_list, cluster_labels = total_energy(content_features, style_features, k=k, lambd=lambd, expansion=expansion, distance=distance)
+    labels, cluster_list, cluster_labels = total_energy(content_features, style_features, k=k, lambd=lambd, expansion=expansion, distance=distance, max_cycles=max_cycles)
     labels = labels.flatten()
 
     transfered_features = np.zeros(content_features.shape).reshape(content_features.shape[0], -1)
