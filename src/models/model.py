@@ -41,7 +41,7 @@ class TransferModel(nn.Module):
         self.content_loss = ContentLoss()
         self.style_loss = StyleLoss()
         self.mode = mode
-        self.algo = "pymax"
+        self.algo = algo
 
     def forward(self, content_images, style_images, output_image=False):
         if self.mode == "pretrain":
