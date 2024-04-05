@@ -85,6 +85,9 @@ ipython_config.py
 data/wikiart/
 data/coco/
 data/val2017/
+data/content/
+data/style/
+data/images/
 
 *.pt
 *.pth
