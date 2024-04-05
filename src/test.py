@@ -59,6 +59,7 @@ if __name__ == "__main__":
     args.add_argument("--pretrained_weights", type=str, default="models/pretrain_model.pth")
     args.add_argument("--content", type=str, default="./data/images/dance2.png")
     args.add_argument("--style", type=str, default="./data/images/monnet.png")
+    args.add_argument("--distance", type=str, default="cosine")
     args.add_argument("--algo", type=str, default="ae")
     args = args.parse_args()
 
@@ -78,6 +79,7 @@ if __name__ == "__main__":
         alpha=alpha,
         gamma=gamma,
         lambd=lambd,
+        distance=args.distance,
         algo=args.algo,
         mode="style_transfer"
     )
@@ -95,5 +97,6 @@ if __name__ == "__main__":
         _, output_image , _ = model(content_image, style_image, output_image=True)
         output_image = output_image.squeeze(0).cpu()
 
-    save_image(output_image, "output_image.png")
+    output_name = f"output_{args.content.split('/')[-1].split('.')[0]}_{args.style.split('/')[-1].split('.')[0]}_{args.algo}_{args.distance}_k_{n_clusters}_α_{alpha}_λ_{lambd}.png"
+    save_image(output_image, f"{output_name}")
     print("Output image saved.")

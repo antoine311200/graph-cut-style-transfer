@@ -55,8 +55,9 @@ def data_energy(content_features_, cluster_centers,distance="cosine"):
         similarity = cosine_similarity(content_features, cluster_centers)
         similarity = similarity.reshape(content_shape[1], content_shape[2], -1)
         distances = 1 - similarity
+
     else: #euclidean distance
-        distances = np.linalg.norm(np.array([content_features - cluster_centers[k] for k in range(cluster_centers.shape[0])]).T,axis=2)
+        distances = np.linalg.norm(content_features[:, None, :] - cluster_centers[None, :, :], axis=2)
         distances = distances.reshape(content_shape[1], content_shape[2], -1)
 
     return distances
@@ -106,7 +107,7 @@ def total_energy(content_features, style_features, k=2, lambd=0.1, expansion="py
 
         labels = aexpansion_grid(data_term, smooth_term, max_cycles=None) # (height, width)
     else:
-        greedy_assignments = np.argmin(data_term,axis=2)
+        greedy_assignments = np.argmin(data_term,axis=2) # (height, width)
         labels, energy, total_energy = gc.alpha_expansion(data_term, greedy_assignments, max_cycles=max_cycles, lambd=lambd)
 
     return labels, cluster_list, cluster_labels
